@@ -1,0 +1,50 @@
+# --- Dependencies ---
+# Thư viện tải về từ npm, dung lượng rất lớn và không bao giờ đưa lên Git
+node_modules/
+jspm_packages/
+
+# --- Environment & Secrets (CỰC KỲ QUAN TRỌNG) ---
+# Chứa mật khẩu database, Secret Key của JWT, biến môi trường... Tuyệt đối không để lộ lên GitHub
+.env
+.env.local
+.env.development.test
+.env.production
+
+# --- Logs ---
+# Các file log lỗi hoặc log hoạt động của server sinh ra trong quá trình chạy
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Runtime Data ---
+# Dữ liệu tạm, PID file của tiến trình Node
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# --- Editor & IDE Settings ---
+# Cấu hình riêng của môi trường lập trình cá nhân
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs
+*.njsproj
+*.sln
+*.swp
+
+# --- OS generated files ---
+# Các file rác tự sinh do hệ điều hành (Windows/Mac)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
