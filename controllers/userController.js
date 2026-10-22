@@ -6,32 +6,32 @@ import { createHttpError } from "../utils/createHttpError.js";
 export const register = async (req, res) => {
   const { userName, password, fullName, role, department } = req.body;
 
-  // 1. Kiểm tra các trường bắt buộc
+  // 1. Validate required fields
   if (!userName || !password || !fullName) {
     throw createHttpError(
-      "Vui lòng nhập đầy đủ tên đăng nhập, mật khẩu và họ tên.",
+      "Please provide username, password, and full name.",
       400,
     );
   }
 
   if (password.length < 6) {
-    throw createHttpError("Mật khẩu phải có ít nhất 6 ký tự.", 400);
+    throw createHttpError("Password must be at least 6 characters long.", 400);
   }
 
-  // 2. Nếu đăng ký làm nhân viên điều phối (dispatcher), bắt buộc phải có phòng ban
+  // 2. Dispatcher role requires a valid department
   if (role === "dispatcher") {
     if (!department || !["TECHNICAL", "MEDICAL"].includes(department)) {
       throw createHttpError(
-        "Tài khoản Dispatcher bắt buộc phải thuộc phòng ban TECHNICAL hoặc MEDICAL.",
+        "Dispatcher account must be assigned to either TECHNICAL or MEDICAL department.",
         400,
       );
     }
   }
 
-  // 3. Kiểm tra trùng tên đăng nhập
+  // 3. Check for existing username
   const existingUser = await User.findOne({ userName });
   if (existingUser) {
-    throw createHttpError("Tên đăng nhập đã tồn tại trên hệ thống.", 409);
+    throw createHttpError("Username already exists.", 409);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -41,12 +41,11 @@ export const register = async (req, res) => {
     password: hashedPassword,
     fullName,
     role: role || "student",
-    // Nếu không phải dispatcher thì department luôn là null
     department: role === "dispatcher" ? department : null,
   });
 
   return res.status(201).json({
-    message: "Đăng ký tài khoản thành công.",
+    message: "User registered successfully.",
     user: {
       _id: newUser._id,
       userName: newUser.userName,
@@ -61,21 +60,18 @@ export const login = async (req, res) => {
   const { userName, password } = req.body;
 
   if (!userName || !password) {
-    throw createHttpError(
-      "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.",
-      400,
-    );
+    throw createHttpError("Username and password are required.", 400);
   }
 
   const existingUser = await User.findOne({ userName }).select("+password");
 
   if (!existingUser) {
-    throw createHttpError("Tên đăng nhập hoặc mật khẩu không chính xác.", 401);
+    throw createHttpError("Invalid username or password.", 401);
   }
 
   const isPasswordValid = await bcrypt.compare(password, existingUser.password);
   if (!isPasswordValid) {
-    throw createHttpError("Tên đăng nhập hoặc mật khẩu không chính xác.", 401);
+    throw createHttpError("Invalid username or password.", 401);
   }
 
   const token = jwt.sign(
@@ -91,7 +87,7 @@ export const login = async (req, res) => {
   );
 
   return res.status(200).json({
-    message: "Đăng nhập thành công.",
+    message: "Login successful.",
     token,
     user: {
       _id: existingUser._id,

@@ -5,13 +5,13 @@ export const authMiddleware = (req, res, next) => {
   const authorization = req.headers.authorization;
 
   if (!authorization) {
-    throw createHttpError("Không tìm thấy token xác thực.", 401);
+    throw createHttpError("Access denied. No token provided.", 401);
   }
 
   const [type, token] = authorization.split(" ");
 
   if (type !== "Bearer" || !token) {
-    throw createHttpError("Token không đúng định dạng Bearer.", 401);
+    throw createHttpError("Invalid token format. Bearer token required.", 401);
   }
 
   try {
@@ -19,9 +19,8 @@ export const authMiddleware = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    throw createHttpError("Token không hợp lệ hoặc đã hết hạn.", 401);
+    throw createHttpError("Invalid or expired token.", 401);
   }
 };
 
-// Alias ngắn gọn: authenticate
 export const authenticate = authMiddleware;
