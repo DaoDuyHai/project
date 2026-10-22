@@ -1,16 +1,25 @@
 import express from "express";
 import "dotenv/config";
-import userRouters from "./routes/userRoutes.js";
+import connectDB from "./config/db.js";
+import userRoutes from "./routes/userRoutes.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 
+// Kết nối cơ sở dữ liệu MongoDB
+connectDB();
+
 app.use(express.json());
 
-app.use("/user", userRouters);
+// Routes
+app.use("/api/users", userRoutes);
+// Hỗ trợ đường dẫn cũ /user để tương thích
+app.use("/user", userRoutes);
 
+// Middleware xử lý lỗi tập trung
 app.use(errorHandler);
 
-app.listen(process.env.PORT, () => {
-  console.log(`Example app listening on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
