@@ -15,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/users", userRoutes);
+
 app.use("/api/incidents", incidentRoutes);
 
 // Middleware xử lý lỗi tập trung

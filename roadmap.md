@@ -65,8 +65,8 @@
      - Gán `reporter = req.user.userId`.
   3. Tạo Route `POST /api/incidents` gắn `authMiddleware`.
 - **Nghiệm thu Ngày 1:**
-  - [ ] Gọi `POST /api/incidents` gửi sự cố loại điện $\rightarrow$ MongoDB lưu với `department: "TECHNICAL"`.
-  - [ ] Gửi sự cố loại y tế $\rightarrow$ MongoDB lưu với `department: "MEDICAL"`.
+  - [x] Gọi `POST /api/incidents` gửi sự cố loại điện $\rightarrow$ MongoDB lưu với `department: "TECHNICAL"`.
+  - [x] Gửi sự cố loại y tế $\rightarrow$ MongoDB lưu với `department: "MEDICAL"`.
 
 ### Ngày 2: Các API Xem danh sách cho từng màn hình
 
@@ -81,9 +81,9 @@
      - Query: `Incident.find({ responder: req.user.userId })`.
      - Lấy các ca mà chính người này đang làm hoặc đã làm xong.
 - **Nghiệm thu Ngày 2:**
-  - [ ] Đăng nhập Reporter $\rightarrow$ Gọi `GET /my-reports` $\rightarrow$ Thấy đúng danh sách sự cố của mình.
-  - [ ] Đăng nhập Dispatcher Kỹ thuật $\rightarrow$ Gọi `GET /pending` $\rightarrow$ Chỉ thấy ca Kỹ thuật PENDING.
-  - [ ] Đăng nhập Dispatcher Y tế $\rightarrow$ Gọi `GET /pending` $\rightarrow$ Chỉ thấy ca Y tế PENDING.
+  - [x] Đăng nhập Reporter $\rightarrow$ Gọi `GET /my-reports` $\rightarrow$ Thấy đúng danh sách sự cố của mình.
+  - [x] Đăng nhập Dispatcher Kỹ thuật $\rightarrow$ Gọi `GET /pending` $\rightarrow$ Chỉ thấy ca Kỹ thuật PENDING.
+  - [x] Đăng nhập Dispatcher Y tế $\rightarrow$ Gọi `GET /pending` $\rightarrow$ Chỉ thấy ca Y tế PENDING.
 
 \*🎯 **Đối chiếu API Contract: Xem Mục 3.1, Mục 3.2, Mục 4.1, Mục 4.2 trong tài liệu API.\***
 
@@ -104,9 +104,9 @@
      - **Cửa chặn 3 (Status):** Kiểm tra `incident.status === "PENDING"` $\rightarrow$ Ca đã có người nhận rồi thì chặn `400`.
      - Nếu hợp lệ: Cập nhật `status = "IN_PROGRESS"`, `responder = req.user.userId`.
 - **Nghiệm thu Ngày 3:**
-  - [ ] Dùng token Học sinh gọi `accept` $\rightarrow$ Bị chặn `403 Forbidden` ✅.
-  - [ ] Dùng token Kỹ thuật viên gọi nhận ca Y tế $\rightarrow$ Bị chặn `403 Forbidden` ✅.
-  - [ ] Dùng token Kỹ thuật viên nhận đúng ca Kỹ thuật $\rightarrow$ Thành công chuyển `IN_PROGRESS` ✅.
+  - [x] Logic kiểm tra phòng ban (`incident.department !== req.user.department`) $\rightarrow$ Bị chặn `403 Forbidden` ✅.
+  - [x] Logic kiểm tra trạng thái nguyên tử (`status: "PENDING"`) $\rightarrow$ Tránh nhận đè, trùng lặp ✅.
+  - [x] Nhận đúng ca thuộc phòng ban của mình $\rightarrow$ Thành công chuyển `IN_PROGRESS` ✅.
 
 ### Ngày 4: API Hoàn thành (`resolve`) & Route Admin
 
@@ -119,9 +119,9 @@
      - Gắn `authorizeRoles("admin")` $\rightarrow$ User thường táy máy xem toàn bộ trường bị chặn `403`.
      - Hỗ trợ query lọc: `?status=...&department=...`.
 - **Nghiệm thu Ngày 4:**
-  - [ ] Nhân viên A bấm hoàn thành ca của Nhân viên B $\rightarrow$ Bị chặn `403 Forbidden` ✅.
-  - [ ] Đúng người phụ trách bấm hoàn thành $\rightarrow$ Thành công chuyển `RESOLVED` ✅.
-  - [ ] Tài khoản không phải Admin vào `GET /api/incidents` $\rightarrow$ Bị chặn `403 Forbidden` ✅.
+  - [x] Nhân viên A bấm hoàn thành ca của Nhân viên B $\rightarrow$ Bị chặn `403 Forbidden` ✅.
+  - [x] Đúng người phụ trách bấm hoàn thành $\rightarrow$ Thành công chuyển `RESOLVED`, lưu `resolvedAt` và `resolutionNotes` ✅.
+  - [ ] Tài khoản không phải Admin vào `GET /api/incidents` $\rightarrow$ Bị chặn `403 Forbidden` (Viết nốt API Admin vào ngày mai).
 
 \*🎯 **Đối chiếu API Contract: Xem Mục 4.1 (Action Nhận việc), Mục 4.2 (Action Hoàn thành), Mục 5.1 trong tài liệu API.\***
 
@@ -231,13 +231,13 @@
 
 ## 📋 BẢNG CHECKLIST ĐỐI CHIẾU HÀNG NGÀY
 
-| Giai đoạn |  Ngày  | Nội dung chính                          | API liên quan (Mục trong file API Contract)                            |  Trạng thái  |
-| :-------: | :----: | :-------------------------------------- | :--------------------------------------------------------------------- | :----------: |
-| **GĐ 0**  | **0**  | Nền tảng Auth, MVC, MongoDB             | `POST /register`, `POST /login`, `GET /profile` (Mục 2)                |   ✅ Xong    |
-| **GĐ 1**  | **1**  | Incident Model + API Báo sự cố          | `POST /api/incidents` (Mục 3.1)                                        | ⏳ Tiếp theo |
-| **GĐ 1**  | **2**  | API Danh sách cho Reporter & Dispatcher | `GET /my-reports`, `GET /pending`, `GET /my-tasks` (Mục 3.2, 4.1, 4.2) |  ⏳ Chờ làm  |
-| **GĐ 2**  | **3**  | Phân quyền RBAC + API Nhận việc         | `PATCH /api/incidents/:id/accept` (Mục 4.1)                            |  ⏳ Chờ làm  |
-| **GĐ 2**  | **4**  | API Hoàn thành + Danh sách Admin        | `PATCH /api/incidents/:id/resolve`, `GET /incidents` (Mục 4.2, 5.1)    |  ⏳ Chờ làm  |
+| Giai đoạn |  Ngày  | Nội dung chính                          | API liên quan (Mục trong file API Contract)                            |           Trạng thái           |
+| :-------: | :----: | :-------------------------------------- | :--------------------------------------------------------------------- | :----------------------------: |
+| **GĐ 0**  | **0**  | Nền tảng Auth, MVC, MongoDB             | `POST /register`, `POST /login`, `GET /profile` (Mục 2)                |            ✅ Xong             |
+| **GĐ 1**  | **1**  | Incident Model + API Báo sự cố          | `POST /api/incidents` (Mục 3.1)                                        |       ✅ Đã hoàn thành         |
+| **GĐ 1**  | **2**  | API Danh sách cho Reporter & Dispatcher | `GET /my-reports`, `GET /pending`, `GET /my-tasks` (Mục 3.2, 4.1, 4.2) | ✅ Đã hoàn thành (v1.0 REST)   |
+| **GĐ 2**  | **3**  | Phân quyền RBAC + API Nhận việc         | `PATCH /api/incidents/:id/accept` (Mục 4.1)                            | ✅ Đã viết xong logic cốt lõi |
+| **GĐ 2**  | **4**  | API Hoàn thành + Danh sách Admin        | `PATCH /api/incidents/:id/resolve`, `GET /incidents` (Mục 4.2, 5.1)    | ⏳ Còn nốt API Admin vào ngày mai |
 | **GĐ 3**  | **5**  | Setup Socket.io Server + Push sự cố mới | Gắn `new_incident` vào hàm tạo sự cố (Mục 6)                           |  ⏳ Chờ làm  |
 | **GĐ 3**  | **6**  | Real-time Cập nhật trạng thái 2 chiều   | Gắn `incident_accepted`, `incident_updated` (Mục 6)                    |  ⏳ Chờ làm  |
 | **GĐ 3**  | **7**  | Kiểm thử toàn diện Real-time 3 bên      | Test luồng end-to-end                                                  |  ⏳ Chờ làm  |

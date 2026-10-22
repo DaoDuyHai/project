@@ -45,6 +45,10 @@ const incidentSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    resolvedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
