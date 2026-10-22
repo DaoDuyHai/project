@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     password: {
       type: String,
       required: true,
@@ -18,8 +23,13 @@ const userSchema = new mongoose.Schema(
       enum: ["student", "teacher", "dispatcher", "admin"],
       default: "student",
     },
+    department: {
+      type: String,
+      enum: ["TECHNICAL", "MEDICAL"],
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", userSchema);

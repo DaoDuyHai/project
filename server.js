@@ -13,8 +13,6 @@ app.use(express.json());
 
 // Routes
 app.use("/api/users", userRoutes);
-// Hỗ trợ đường dẫn cũ /user để tương thích
-app.use("/user", userRoutes);
 
 // Middleware xử lý lỗi tập trung
 app.use(errorHandler);
