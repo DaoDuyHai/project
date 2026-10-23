@@ -1,252 +1,258 @@
-# HỆ THỐNG BÁO CÁO & ĐIỀU PHỐI SỰ CỐ TRƯỜNG HỌC
-
+# 🏫 HỆ THỐNG ĐIỀU PHỐI & XỬ LÝ SỰ CỐ HỌC ĐƯỜNG
 ## (SCHOOL INCIDENT DISPATCH SYSTEM)
 
-> **Backend REST API & Real-time Socket.io — Node.js / Express / MongoDB**
+> **Backend RESTful API & Real-time Event Dispatching System**  
+> Xây dựng với **Node.js, Express 5, MongoDB (Mongoose), Socket.io và JWT RBAC**.
 
 ---
 
-## 1. MÔ HÌNH KIẾN TRÚC TỔNG QUAN
+## 📑 MỤC LỤC
+1. [Kiến Trúc Tổng Quan](#1-kiến-trúc-tổng-quan)
+2. [Đặc Điểm Kỹ Thuật Nổi Bật](#2-đặc-điểm-kỹ-thuật-nổi-bật)
+3. [Phân Hệ Người Dùng & Ma Trận Phân Quyền (RBAC)](#3-phân-hệ-người-dùng--ma-trận-phân-quyền-rbac)
+4. [Vòng Đời Sự Cố & Cơ Chế Kiểm Soát Tranh Chấp (Concurrency Control)](#4-vòng-đời-sự-cố--cơ-chế-kiểm-soát-tranh-chấp-concurrency-control)
+5. [Hệ Thống Real-Time Với Socket.io Rooms](#5-hệ-thống-real-time-với-socketio-rooms)
+6. [Cấu Trúc Thư Mục Chuẩn MVC](#6-cấu-trúc-thư-mục-chuẩn-mvc)
+7. [Danh Sách REST API Endpoints (11 Endpoints)](#7-danh-sách-rest-api-endpoints-11-endpoints)
+8. [Hướng Dẫn Cài Đặt & Chạy Thử](#8-hướng-dẫn-cài-đặt--chạy-thử)
+9. [Lộ Trình Mở Rộng Tương Lai (Future Roadmap)](#9-lộ-trình-mở-rộng-tương-lai-future-roadmap)
+
+---
+
+## 1. KIẾN TRÚC TỔNG QUAN
+
+> **Lưu ý:** Repository này là **mã nguồn Backend**. Các khối "Client (Dự kiến)" trong sơ đồ dưới đây mô tả các phân hệ người dùng trên giao diện để minh họa luồng luân chuyển dữ liệu thực tế.
 
 ```
-                            ┌──────────────────────────────────────────────┐
-                            │          NODE.JS & EXPRESS BACKEND           │
-                            │  - RESTful APIs (Auth, Incidents, Analytics) │
-                            │  - Socket.io (Real-time Push & Chat)         │
-                            │  - RBAC Middleware (401 / 403)               │
-                            │  - MongoDB + Mongoose ODM                    │
-                            └──────────────────────┬───────────────────────┘
-                                                   │
-              ┌────────────────────────────────────┼────────────────────────────────────┐
-              ▼                                    ▼                                    ▼
-  ┌────────────────────────┐         ┌────────────────────────┐         ┌────────────────────────┐
-  │    TRANG REPORTER      │         │    TRANG DISPATCHER    │         │     TRANG ADMIN        │
-  │  (Giáo viên / Học sinh)│         │ (Kỹ thuật / Y tế)     │         │  (Quản trị viên)       │
-  │                        │         │                        │         │                        │
-  │ [Tab 1] Tạo & Gửi     │ Socket  │ [Tab 1] Sự cố chờ     │ Socket  │ Thống kê theo tháng/năm│
-  │         sự cố mới      │◄───────►│         tiếp nhận      │◄───────►│ Theo dõi toàn bộ       │
-  │ [Tab 2] Lịch sử sự cố │  Push   │ [Tab 2] Sự cố đang    │  Push   │ trạng thái sự cố       │
-  │         đã gửi         │         │         làm / đã xong  │         │ trong hệ thống         │
-  └────────────────────────┘         └────────────────────────┘         └────────────────────────┘
+                             ┌──────────────────────────────────────────────┐
+                             │          NODE.JS & EXPRESS 5 BACKEND         │
+                             │  - RESTful APIs (Auth, Incidents, Analytics) │
+                             │  - Socket.io (Room-based Event Dispatching)  │
+                             │  - Multi-tier RBAC (401 / 403 Guards)        │
+                             │  - MongoDB Aggregation Pipeline Queries      │
+                             └──────────────────────┬───────────────────────┘
+                                                    │
+               ┌────────────────────────────────────┼────────────────────────────────────┐
+               ▼                                    ▼                                    ▼
+   ┌────────────────────────┐         ┌────────────────────────┐         ┌────────────────────────┐
+   │  CLIENT: REPORTER      │         │  CLIENT: DISPATCHER    │         │  CLIENT: ADMIN         │
+   │  (Giáo viên / Học sinh)│         │  (Kỹ thuật / Y tế)     │         │  (Ban Giám Hiệu)       │
+   │                        │         │                        │         │                        │
+   │ - Tạo & Gửi sự cố mới  │ Socket  │ - Nhận ca theo khoa    │ Socket  │ - Thống kê Aggregation │
+   │ - Xem lịch sử cá nhân  │◄───────►│ - Khóa ca nguyên tử    │◄───────►│ - Lọc động & Phân trang│
+   │ - Nhận thông báo live  │  Rooms  │ - Nghiệm thu hoàn thành│  Rooms  │ - Giám sát toàn trường │
+   └────────────────────────┘         └────────────────────────┘         └────────────────────────┘
 ```
 
 ### Công nghệ sử dụng
-
-| Thành phần | Công nghệ                                                 |
-| :--------- | :-------------------------------------------------------- |
-| Runtime    | Node.js (ES Modules)                                      |
-| Framework  | Express.js v5.x                                           |
-| Database   | MongoDB + Mongoose ODM                                    |
-| Xác thực   | JWT (JSON Web Token) + Bcrypt                             |
-| Phân quyền | RBAC Middleware (Role + Department + Ownership)           |
-| Real-time  | Socket.io (Room-based Push & Notification)                |
-| Kiến trúc  | Layered MVC (Routes → Controllers → Models → Middlewares) |
+| Thành phần | Công nghệ / Thư viện | Vai trò |
+| :--- | :--- | :--- |
+| **Runtime** | Node.js (v20+ / ES Modules) | Môi trường thực thi phi đồng bộ |
+| **Framework** | Express.js v5.x | Xây dựng RESTful API và Middleware Pipeline |
+| **Database** | MongoDB & Mongoose ODM | Lưu trữ tài liệu BSON, Aggregation Pipeline |
+| **Real-time** | Socket.io v4.x | Giao tiếp hai chiều WebSocket dựa trên Room |
+| **Bảo mật** | JWT (JSON Web Token) & Bcrypt | Cấp token phi trạng thái, băm mật khẩu (10 salt rounds) |
+| **Kiểm thử API**| Postman Collection v2.1 | Danh mục request mẫu sẵn sàng import để kiểm thử |
 
 ---
 
-## 2. PHÂN HỆ NGƯỜI DÙNG & VAI TRÒ
+## 2. ĐẶC ĐIỂM KỸ THUẬT NỔI BẬT
 
-| Vai trò (Role)        | Phòng ban (Department) | Mô tả                          | Quyền hạn chính                                    |
-| :-------------------- | :--------------------- | :----------------------------- | :------------------------------------------------- |
-| `student` / `teacher` | `GENERAL`              | Giáo viên, Học sinh (Reporter) | Tạo sự cố, Xem sự cố **của mình**                  |
-| `dispatcher`          | `TECHNICAL`            | Kỹ thuật viên cơ sở vật chất   | Xem & Nhận sự cố **Kỹ thuật**, Cập nhật trạng thái |
-| `dispatcher`          | `MEDICAL`              | Nhân viên y tế học đường       | Xem & Nhận sự cố **Y tế**, Cập nhật trạng thái     |
-| `admin`               | —                      | Ban Giám Hiệu / Quản trị viên  | Xem toàn bộ, Thống kê, Xuất báo cáo                |
-
----
-
-## 3. MÔ TẢ NGHIỆP VỤ TỪNG TRANG
-
-### 3.1. TRANG REPORTER (Giáo viên / Học sinh)
-
-#### Tab 1 — Tạo & Gửi sự cố mới
-
-- Reporter điền form:
-  - **Tiêu đề sự cố** (`title`): Ví dụ _"Quạt trần rơi cánh"_
-  - **Vị trí** (`location`): Ví dụ `A201`, `Lab Hóa`, `Sân bóng`
-  - **Loại sự cố** (`type`): Chọn 1 trong danh sách:
-    - `Hỏng điện / Nước / Thiết bị` → Server tự phân vào department **`TECHNICAL`**
-    - `Tai nạn / Sức khỏe / Cấp cứu` → Server tự phân vào department **`MEDICAL`**
-  - **Mô tả chi tiết** (`description`)
-  - _(Đính kèm ảnh: Coming soon — sẽ bổ sung ở giai đoạn cải tiến)_
-- Bấm **"Gửi báo cáo"** → Server lưu vào MongoDB + **Socket.io đẩy real-time** về đúng phòng ban.
-
-#### Tab 2 — Lịch sử sự cố đã gửi
-
-- Hiển thị **tất cả** sự cố mà tài khoản Reporter này đã gửi (không phân loại theo department — vì đây chỉ là sự cố của chính mình).
-- Mỗi dòng hiển thị: Tiêu đề | Vị trí | Loại sự cố | **Trạng thái hiện tại** (`PENDING` / `IN_PROGRESS` / `RESOLVED`) | Thời gian tạo.
-- **Real-time:** Khi Dispatcher nhận việc hoặc hoàn thành → Trạng thái sự cố tự động cập nhật trên màn hình Reporter mà **không cần reload trang**.
+1. **Khóa nguyên tử chống Race Condition (Atomic Concurrency Control):**
+   - Tránh xung đột khi nhiều nhân viên cùng bấm nhận một sự cố tại cùng một thời điểm bằng thao tác nguyên tử MongoDB: `findOneAndUpdate({ _id, status: 'PENDING' }, { status: 'IN_PROGRESS', responder: userId })`. Nếu ca đã được nhận trước đó, hệ thống trả về mã `409 Conflict`.
+2. **Định tuyến thông báo theo Room (Targeted Socket Routing):**
+   - Phân chia kênh phát sóng qua Socket.io: Sự cố kỹ thuật gửi vào `department_TECHNICAL`, sự cố y tế gửi vào `department_MEDICAL`, sự kiện hệ thống gửi vào `room_admin`, và thông báo trạng thái riêng gửi về `user_${reporterId}`.
+3. **Thống kê số liệu bằng MongoDB Aggregation Pipeline:**
+   - Thay vì nạp toàn bộ danh sách bản ghi về tầng ứng dụng Node.js để tính toán bằng JavaScript, hệ thống tận dụng engine của MongoDB để lọc (`$match`), gom nhóm (`$group`), tính tổng (`$sum`), sắp xếp (`$sort`), giới hạn top (`$limit`) và định hình lại cấu trúc trường hiển thị (`$project`), thực thi song song qua `Promise.all`.
+4. **Phân trang và lọc động (Pagination & Dynamic Filtering):**
+   - Áp dụng phân trang theo offset `.skip(skip).limit(limitNumber)` kết hợp `countDocuments` để đếm tổng số bản ghi và tính toán `totalPages`, giúp giảm tải dung lượng phản hồi cho Client.
 
 ---
 
-### 3.2. TRANG DISPATCHER (Kỹ thuật viên / Nhân viên Y tế)
+## 3. PHÂN HỆ NGƯỜI DÙNG & MA TRẬN PHÂN QUYỀN (RBAC)
 
-> Hiện tại hệ thống hỗ trợ 2 loại Dispatcher: **TECHNICAL** (Kỹ thuật) và **MEDICAL** (Y tế).
-> _(Bổ sung thêm SECURITY ở giai đoạn cải tiến)_
+| Vai trò (Role) | Phòng ban (Department) | Quyền hạn chính | Quy định truy cập |
+| :--- | :--- | :--- | :---: |
+| `student` / `teacher` | `GENERAL` | Báo cáo sự cố, Xem danh sách sự cố của chính mình | Chỉ truy cập route Reporter |
+| `dispatcher` | `TECHNICAL` | Xem sự cố chờ (`/pending`), Nhận & Hoàn thành sự cố **Kỹ thuật** | Bị chặn `403` nếu thao tác ca Y tế |
+| `dispatcher` | `MEDICAL` | Xem sự cố chờ (`/pending`), Nhận & Hoàn thành sự cố **Y tế** | Bị chặn `403` nếu thao tác ca Kỹ thuật |
+| `admin` | — | Xem toàn bộ sự cố toàn trường, Xem Thống kê Analytics | Toàn quyền kiểm tra và giám sát |
 
-#### Tab 1 — Sự cố chờ tiếp nhận
-
-- Hiển thị **chỉ** các sự cố có `status = "PENDING"` **và** thuộc đúng phòng ban (`department`) của Dispatcher đang đăng nhập.
-  - Ví dụ: Kỹ thuật viên chỉ thấy sự cố `TECHNICAL`, không thấy sự cố `MEDICAL`.
-- Mỗi dòng có nút **"Nhận sự cố"**:
-  - Bấm nhận → Trạng thái chuyển thành `IN_PROGRESS`, ghi nhận `responderId`.
-  - **Real-time:** Sự cố vừa được nhận sẽ **biến mất** khỏi Tab 1 của các Dispatcher khác cùng phòng ban (không cần reload). Đồng thời, bên trang Reporter, trạng thái cũng tự cập nhật.
-- **Real-time:** Khi Reporter gửi sự cố mới → Sự cố **tự động xuất hiện** trên Tab 1 của Dispatcher đúng phòng ban ngay lập tức (không cần reload).
-
-#### Tab 2 — Sự cố đang xử lý / Đã hoàn thành
-
-- Hiển thị các sự cố mà **chính Dispatcher này** đã bấm nhận (cả `IN_PROGRESS` lẫn `RESOLVED`).
-- Sự cố đang ở trạng thái `IN_PROGRESS` có nút **"Hoàn thành"**:
-  - Bấm hoàn thành → Nhập ghi chú cách xử lý (`resolutionNotes`) → Trạng thái chuyển thành `RESOLVED`.
-  - **Real-time:** Bên trang Reporter, trạng thái sự cố cũng tự cập nhật thành `RESOLVED`.
-- Sự cố `RESOLVED` hiển thị ở cuối danh sách với ghi chú giải quyết.
+> **Lưu ý về quản trị tài khoản:** Trong môi trường thực tế, route công khai `/register` chỉ phục vụ tài khoản học sinh / giáo viên thông thường. Các tài khoản có quyền hạn đặc biệt (`dispatcher`, `admin`) được khởi tạo trước thông qua kịch bản Seed dữ liệu (`npm run seed`) nhằm đảm bảo tính bảo mật.
 
 ---
 
-### 3.3. TRANG ADMIN (Quản trị viên / Ban Giám Hiệu)
-
-- **Theo dõi toàn bộ sự cố trong hệ thống:**
-  - Danh sách tất cả sự cố (mọi phòng ban, mọi trạng thái).
-  - Lọc theo: Trạng thái (`PENDING` / `IN_PROGRESS` / `RESOLVED`), Phòng ban (`TECHNICAL` / `MEDICAL`), Khoảng thời gian.
-  - **Real-time:** Khi có sự cố mới được tạo hoặc trạng thái thay đổi → Dashboard Admin tự cập nhật.
-- **Thống kê:**
-  - Số lượng sự cố theo tháng, theo năm.
-  - Tỷ lệ phân bổ theo phòng ban.
-  - Top phòng học/khu vực hay xảy ra sự cố nhất ("Điểm nóng").
-  - _(Xuất file CSV: Coming soon — giai đoạn cải tiến)_
-
----
-
-## 4. LUỒNG REAL-TIME: CHỖ NÀO CẦN SOCKET.IO, CHỖ NÀO REQUEST/RESPONSE BÌNH THƯỜNG
-
-### Bắt buộc Real-time (Socket.io):
-
-| Sự kiện                     | Ai phát (emit) | Ai nhận (receive)                                             | Mô tả                                                                                 |
-| :-------------------------- | :------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------ |
-| Reporter tạo sự cố mới      | Server         | Dispatcher đúng phòng ban + Admin                             | Sự cố mới xuất hiện trên Tab 1 Dispatcher & Dashboard Admin ngay lập tức              |
-| Dispatcher bấm "Nhận sự cố" | Server         | Reporter (người tạo) + Admin + Các Dispatcher khác cùng phòng | Trạng thái đổi thành `IN_PROGRESS`. Sự cố biến mất khỏi Tab "chờ" của Dispatcher khác |
-| Dispatcher bấm "Hoàn thành" | Server         | Reporter (người tạo) + Admin                                  | Trạng thái đổi thành `RESOLVED`                                                       |
-
-### Giữ nguyên Request/Response (REST API bình thường):
-
-| Thao tác                                  | Lý do                                          |
-| :---------------------------------------- | :--------------------------------------------- |
-| Đăng ký / Đăng nhập                       | Chỉ xảy ra 1 lần, không cần real-time          |
-| Xem Profile                               | Dữ liệu tĩnh, không thay đổi liên tục          |
-| Lấy lịch sử sự cố đã gửi (lần đầu mở tab) | Tải dữ liệu ban đầu khi vào trang              |
-| Xem danh sách sự cố chờ (lần đầu mở tab)  | Tải dữ liệu ban đầu khi vào trang              |
-| Admin xem Thống kê                        | Dữ liệu tổng hợp, không cần cập nhật từng giây |
-
----
-
-## 5. VÒNG ĐỜI TRẠNG THÁI SỰ CỐ (INCIDENT LIFECYCLE)
+## 4. VÒNG ĐỜI SỰ CỐ & CƠ CHẾ KIỂM SOÁT TRANH CHẤP (CONCURRENCY CONTROL)
 
 ```
    Reporter tạo sự cố
           │
           ▼
    ┌──────────────┐     Dispatcher bấm      ┌──────────────┐     Dispatcher bấm     ┌──────────────┐
-   │   PENDING     │ ──── "Nhận sự cố" ────► │ IN_PROGRESS  │ ──── "Hoàn thành" ───► │   RESOLVED   │
-   │  (Chờ tiếp    │                         │ (Đang xử lý) │                        │ (Đã hoàn     │
-   │   nhận)       │                         │               │                        │  thành)      │
-   └──────────────┘                          └──────────────┘                         └──────────────┘
-         │                                          │                                        │
-         │ Socket.io → Dispatcher + Admin           │ Socket.io → Reporter + Admin            │ Socket.io → Reporter + Admin
-         │ (Sự cố mới xuất hiện)                    │ (Trạng thái cập nhật)                   │ (Trạng thái cập nhật)
+   │   PENDING    │ ──── "Nhận việc"  ────► │ IN_PROGRESS  │ ──── "Hoàn thành" ───► │   RESOLVED   │
+   │  (Chờ nhận)  │    (Atomic Lock)        │ (Đang xử lý) │   (Check Ownership)    │  (Đã xong)   │
+   └──────────────┘                         └──────────────┘                        └──────────────┘
+         │                                         │                                       │
+         ▼ Socket.io                               ▼ Socket.io                             ▼ Socket.io
+   - department_${dept}                      - user_${reporterId}                    - user_${reporterId}
+   - room_admin                              - room_admin                            - room_admin
+   - user_${reporterId}                      - department_${dept}                    
 ```
+
+- **Xung đột nhận việc (Race Condition):** Khi 2 kỹ thuật viên cùng bấm nhận 1 sự cố tại cùng một thời điểm:
+  - Thao tác đầu tiên khớp điều kiện `status: "PENDING"` sẽ cập nhật thành công (HTTP `200 OK`).
+  - Thao tác thứ hai không còn tìm thấy trạng thái `"PENDING"` tương ứng, trả về HTTP `409 Conflict` với thông báo: *"This incident has already been accepted by another responder."*
+- **Kiểm tra quyền hoàn thành (Ownership Check):** Chỉ đúng kỹ thuật viên được ghi nhận trong trường `responder` mới có quyền chuyển trạng thái sang `RESOLVED` (HTTP `403 Forbidden` nếu người khác thao tác).
 
 ---
 
-## 6. CHỐNG "TÁY MÁY" — PHÂN QUYỀN ĐA TẦNG (RBAC)
+## 5. HỆ THỐNG REAL-TIME VỚI SOCKET.IO ROOMS
 
-```
-Request đến Server
-   │
-   ▼
-[ Tầng 1: authMiddleware ]    ─── Không có / Sai Token ───► 401 Unauthorized
-   │
-   ▼
-[ Tầng 2: authorizeRoles ]    ─── Sai Role (Reporter nhận việc) ───► 403 Forbidden
-   │
-   ▼
-[ Tầng 3: Kiểm tra Department ] ─── Sai phòng ban (KT nhận ca YT) ───► 403 Forbidden
-   │
-   ▼
-[ Tầng 4: Kiểm tra Ownership ]  ─── Không phải người nhận ca này ───► 403 Forbidden
-   │
-   ▼
-[ THÀNH CÔNG ]
-```
+Hệ thống sử dụng các Room cố định, đồng bộ chính xác giữa Socket Middleware và Controllers:
+- Phòng theo khoa: `department_TECHNICAL`, `department_MEDICAL`
+- Phòng ban quản trị: `room_admin`
+- Phòng cá nhân người dùng: `user_${userId}`
 
-| Kịch bản                                          | Kết quả                                      |
-| :------------------------------------------------ | :------------------------------------------- |
-| Học sinh bấm vào link "Nhận sự cố" của Dispatcher | `403 Forbidden` — Role không đủ quyền        |
-| Kỹ thuật viên bấm nhận ca Y tế                    | `403 Forbidden` — Sai phòng ban chuyên môn   |
-| Nhân viên A bấm "Hoàn thành" ca của Nhân viên B   | `403 Forbidden` — Không phải người phụ trách |
-| Người dùng bất kỳ vào link Thống kê của Admin     | `403 Forbidden` — Chỉ Admin được xem         |
+| Tên sự kiện (Event Name) | Nơi phát ra (Trigger) | Phòng nhận tin (Rooms) | Gói tin kèm theo (Payload) | Tác động dự kiến phía Client (UI State) |
+| :--- | :--- | :--- | :--- | :--- |
+| **`incident:created`** | Sau khi `POST /api/incidents` thành công | `department_${dept}`, `room_admin`, `user_${reporterId}` | `{ message, data: newIncident }` | Dispatcher và Admin nhận sự cố mới trên đầu danh sách; Reporter nhận phản hồi xác nhận |
+| **`incident:accepted`** | Sau khi `PATCH /:id/accept` thành công | `user_${reporterId}`, `department_${dept}`, `room_admin` | `{ message, data: updatedIncident }` | Reporter thấy trạng thái đổi sang `IN_PROGRESS`; Dispatcher khác thấy sự cố đã được tiếp nhận |
+| **`incident:resolved`** | Sau khi `PATCH /:id/resolve` thành công | `user_${reporterId}`, `room_admin` | `{ message, data: updatedIncident }` | Reporter thấy trạng thái đổi sang `RESOLVED`; Admin cập nhật kết quả xử lý |
 
 ---
 
-## 7. CẤU TRÚC THƯ MỤC DỰ ÁN
+## 6. CẤU TRÚC THƯ MỤC CHUẨN MVC
 
 ```text
 SchoolIncidentDispatch/
 ├── config/
-│   └── db.js                  # Cấu hình kết nối MongoDB
+│   └── db.js                  # Kết nối MongoDB qua Mongoose
 ├── controllers/
-│   ├── userController.js      # Đăng ký, Đăng nhập
-│   └── incidentController.js  # Tạo, Nhận, Hoàn thành sự cố
+│   ├── userController.js      # Đăng ký, Đăng nhập, Xem thông tin cá nhân
+│   ├── incidentController.js  # Nghiệp vụ sự cố (Tạo, Nhận nguyên tử, Hoàn thành)
+│   └── adminController.js     # Lọc động & Phân trang, Thống kê Aggregation
 ├── middlewares/
-│   ├── authMiddleware.js      # Xác thực JWT + Phân quyền RBAC (authorizeRoles)
-│   └── errorHandler.js        # Bắt lỗi tập trung
+│   ├── authMiddleware.js      # Xác thực Bearer Token + Phân quyền authorizeRoles
+│   └── errorHandler.js        # Middleware bắt và định dạng lỗi tập trung
 ├── models/
-│   ├── userModel.js           # User (userName, password, role, department)
-│   └── incidentModel.js       # Incident (title, location, type, department, status, reporter, responder)
+│   ├── userModel.js           # User Schema (Mã hóa bcrypt, phân quyền role & department)
+│   └── incidentModel.js       # Incident Schema (Mapping phòng ban, trạng thái Enum)
+├── postman/
+│   └── SchoolIncidentDispatch.postman_collection.json # File Postman Collection v2.1 (11 endpoints)
 ├── routes/
-│   ├── userRoutes.js          # API /api/users
-│   └── incidentRoutes.js      # API /api/incidents
+│   ├── userRoutes.js          # Router /api/users
+│   ├── incidentRoutes.js      # Router /api/incidents
+│   └── adminRoutes.js         # Router /api (incidents, analytics)
 ├── sockets/
-│   └── incidentSocket.js      # Socket.io: Join room theo department, emit sự kiện real-time
+│   └── incidentSocket.js      # Xác thực Token khi handshake và phân chia Room
 ├── utils/
-│   └── createHttpError.js     # Helper chuẩn hóa lỗi HTTP
-├── .env
-├── .gitignore
-├── package.json
-└── server.js                  # Express + HTTP Server + Socket.io
+│   └── createHttpError.js     # Helper khởi tạo lỗi HTTP có gắn statusCode
+├── .env.example               # Mẫu cấu hình biến môi trường
+├── .gitignore                 # Loại trừ node_modules và file .env
+├── package.json               # Khai báo dependencies và scripts
+├── seed.js                    # Kịch bản khởi tạo tài khoản và sự cố mẫu
+├── server.js                  # Điểm khởi chạy: Tích hợp Express HTTP và Socket.io
+└── README.md                  # Tài liệu hướng dẫn kỹ thuật
 ```
 
 ---
 
-## 8. DANH SÁCH API ENDPOINTS
+## 7. DANH SÁCH REST API ENDPOINTS (11 ENDPOINTS)
 
-### Authentication
+Mọi phản hồi thành công đều tuân thủ cấu trúc chuẩn:
+```json
+{
+  "success": true,
+  "message": "...",
+  "data": { ... }
+}
+```
 
-| Method | Endpoint              | Mô tả                     | Quyền        |
-| :----: | :-------------------- | :------------------------ | :----------- |
-|  POST  | `/api/users/register` | Đăng ký tài khoản         | Public       |
-|  POST  | `/api/users/login`    | Đăng nhập, nhận JWT Token | Public       |
-|  GET   | `/api/users/profile`  | Xem thông tin cá nhân     | Đã đăng nhập |
+### 🔐 Phân hệ Xác thực (3 Endpoints)
+| Method | Endpoint | Mô tả | Quyền hạn |
+| :---: | :--- | :--- | :---: |
+| `POST` | `/api/users/register` | Đăng ký tài khoản người dùng mới | Public |
+| `POST` | `/api/users/login` | Đăng nhập hệ thống, nhận JWT Token (thời hạn 1 ngày) | Public |
+| `GET` | `/api/users/profile` | Xem thông tin tài khoản đang đăng nhập | Đã xác thực |
 
-### Incidents
+### 🚨 Phân hệ Sự cố & Điều phối (6 Endpoints)
+| Method | Endpoint | Mô tả | Quyền hạn |
+| :---: | :--- | :--- | :---: |
+| `POST` | `/api/incidents` | Báo cáo sự cố mới (+ Socket.io broadcast) | `student`, `teacher` |
+| `GET` | `/api/incidents/my-reports` | Xem danh sách sự cố do chính mình gửi | `student`, `teacher` |
+| `GET` | `/api/incidents/pending` | Xem sự cố chờ tiếp nhận đúng khoa chuyên môn | `dispatcher` |
+| `GET` | `/api/incidents/my-tasks` | Xem các sự cố do chính mình đang/đã xử lý | `dispatcher` |
+| `PATCH` | `/api/incidents/:id/accept` | Tiếp nhận sự cố (Khóa nguyên tử chống tranh chấp) | `dispatcher` |
+| `PATCH` | `/api/incidents/:id/resolve` | Bấm hoàn thành sự cố (Kiểm tra quyền sở hữu) | `dispatcher` (người nhận) |
 
-| Method | Endpoint                     | Mô tả                                | Quyền                   |
-| :----: | :--------------------------- | :----------------------------------- | :---------------------- |
-|  POST  | `/api/incidents`             | Tạo sự cố mới + Socket.io push       | Reporter                |
-|  GET   | `/api/incidents/my-reports`  | Lịch sử sự cố đã gửi (của mình)      | Reporter                |
-|  GET   | `/api/incidents/pending`     | Sự cố chờ tiếp nhận (đúng phòng ban) | Dispatcher              |
-|  GET   | `/api/incidents/my-tasks`    | Sự cố mình đang/đã xử lý             | Dispatcher              |
-| PATCH  | `/api/incidents/:id/accept`  | Nhận sự cố + Socket.io push          | Dispatcher              |
-| PATCH  | `/api/incidents/:id/resolve` | Hoàn thành sự cố + Socket.io push    | Dispatcher (người nhận) |
-|  GET   | `/api/incidents`             | Xem toàn bộ sự cố hệ thống           | Admin                   |
-|  GET   | `/api/incidents/analytics`   | Thống kê theo tháng/năm/phòng ban    | Admin                   |
+### 📊 Phân hệ Quản trị & Thống kê (2 Endpoints)
+| Method | Endpoint | Mô tả | Quyền hạn |
+| :---: | :--- | :--- | :---: |
+| `GET` | `/api/incidents` | Xem toàn bộ sự cố (`?status=&department=&page=&limit=`) | `admin` |
+| `GET` | `/api/incidents/analytics` | Thống kê KPI, Tỷ lệ khoa, Top 3 điểm nóng (Aggregation) | `admin` |
 
 ---
 
-## 9. CÁC TÍNH NĂNG SẼ CẢI TIẾN SAU (COMING SOON)
+## 8. HƯỚNG DẪN CÀI ĐẶT & CHẠY THỬ
 
-- [ ] Đính kèm ảnh hiện trường khi tạo sự cố (Multer upload)
-- [ ] Bổ sung phòng ban thứ 3: `SECURITY` (Bảo vệ / An ninh)
-- [ ] Kênh Chat 1-1 giữa Reporter và Dispatcher qua Socket.io Room
-- [ ] Xuất file CSV báo cáo thống kê cho Admin
-- [ ] Ghi chú chi tiết cách xử lý khi Dispatcher hoàn thành sự cố
-- [ ] Thông báo đẩy cho Dispatcher đang offline (lưu hàng đợi, đẩy khi online)
+### 1. Yêu cầu môi trường (Prerequisites)
+- **Node.js:** Phiên bản `v20.x` trở lên.
+- **MongoDB:** MongoDB Community Server cài đặt cục bộ (cổng mặc định `27017`) hoặc chuỗi kết nối từ MongoDB Atlas.
+
+### 2. Cài đặt mã nguồn
+```bash
+# 1. Clone repository về máy
+git clone <URL_REPO_GITHUB_CUA_BAN>
+cd SchoolIncidentDispatch
+
+# 2. Cài đặt các thư viện phụ thuộc
+npm install
+
+# 3. Tạo file cấu hình môi trường
+cp .env.example .env
+```
+
+### 3. Cấu hình biến môi trường
+Mở file `.env` và kiểm tra các giá trị cấu hình tương ứng với môi trường của bạn:
+```env
+PORT=3000
+MONGO_URI=mongodb://localhost:27017/school_dispatch
+SECRET_KEY=your_jwt_secret_key_here
+```
+
+### 4. Khởi tạo dữ liệu mẫu (Seeding)
+Chạy script seed để tạo sẵn 4 tài khoản đại diện cho 4 vai trò kèm dữ liệu sự cố mẫu:
+```bash
+npm run seed
+```
+*Tài khoản mẫu được tạo tự động:*
+- **Admin:** `admin` / mật khẩu: `admin123`
+- **Kỹ thuật viên:** `tech_tuan` / mật khẩu: `password123` (Khoa: `TECHNICAL`)
+- **Nhân viên Y tế:** `med_hoa` / mật khẩu: `password123` (Khoa: `MEDICAL`)
+- **Sinh viên:** `student_nam` / mật khẩu: `password123`
+
+### 5. Khởi chạy Server
+```bash
+# Chạy ở chế độ phát triển (Tự động tải lại khi đổi code)
+npm run dev
+
+# Chạy ở chế độ thông thường
+npm start
+```
+
+### 6. Kiểm thử qua Postman Collection
+Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:
+`postman/SchoolIncidentDispatch.postman_collection.json`
+
+1. Mở Postman → Chọn **Import** → Chọn file `.json` trên.
+2. Bộ sưu tập sẽ tự động tạo sẵn 11 Request với đầy đủ URL, Header và Body JSON mẫu.
+3. Chạy request `Login` tương ứng với tài khoản cần kiểm thử, sao chép mã Token trả về vào biến collection `token` để bắt đầu gửi các yêu cầu có xác thực.
+
+---
+
+## 9. LỘ TRÌNH MỞ RỘNG TƯƠNG LAI (FUTURE ROADMAP)
+
+- [ ] **In-app Real-time Chat:** Mở rộng Socket.io Room `incident_${id}` để người báo cáo và nhân viên phụ trách có thể trao đổi trực tiếp khi đang xử lý sự cố.
+- [ ] **Đính kèm hình ảnh (Media Upload):** Tích hợp Cloudinary hoặc AWS S3 để người báo có thể gửi ảnh chụp hiện trường hư hại.
+- [ ] **Mở rộng phòng ban:** Bổ sung thêm khoa `SECURITY` (Bảo vệ / An ninh trật tự).
+- [ ] **Xuất báo cáo:** Hỗ trợ Admin xuất dữ liệu sự cố và thống kê định dạng Excel / CSV.

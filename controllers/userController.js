@@ -45,7 +45,15 @@ export const register = async (req, res) => {
   });
 
   return res.status(201).json({
+    success: true,
     message: "User registered successfully.",
+    data: {
+      _id: newUser._id,
+      userName: newUser.userName,
+      fullName: newUser.fullName,
+      role: newUser.role,
+      department: newUser.department,
+    },
     user: {
       _id: newUser._id,
       userName: newUser.userName,
@@ -87,8 +95,16 @@ export const login = async (req, res) => {
   );
 
   return res.status(200).json({
+    success: true,
     message: "Login successful.",
     token,
+    data: {
+      _id: existingUser._id,
+      userName: existingUser.userName,
+      fullName: existingUser.fullName,
+      role: existingUser.role,
+      department: existingUser.department,
+    },
     user: {
       _id: existingUser._id,
       userName: existingUser.userName,

@@ -3,7 +3,7 @@ import {
   authMiddleware,
   authorizeRoles,
 } from "../middlewares/authMiddleware.js";
-import { getIncidents } from "../controllers/adminController.js";
+import { getIncidents, getAnalytics } from "../controllers/adminController.js";
 
 const router = express.Router();
 
@@ -12,5 +12,7 @@ router.use(authMiddleware, authorizeRoles("admin"));
 
 // Lấy toàn bộ sự cố toàn trường (có hỗ trợ lọc theo ?status=...&department=...)
 router.get("/incidents", getIncidents);
+
+router.get("/incidents/analytics", getAnalytics);
 
 export default router;

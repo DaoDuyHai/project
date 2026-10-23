@@ -5,7 +5,7 @@ export const initIncidentSocket = (io) => {
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) {
-      return next(new Error("Thiếu token xác thực Socket"));
+      return next(new Error("Authentication token required"));
     }
 
     try {
@@ -14,7 +14,7 @@ export const initIncidentSocket = (io) => {
       socket.user = decoded;
       next();
     } catch (error) {
-      return next(new Error("Token không hợp lệ hoặc đã hết hạn"));
+      return next(new Error("Invalid or expired token"));
     }
   });
 

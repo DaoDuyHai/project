@@ -36,13 +36,14 @@ export const createIncident = async (req, res) => {
     .to("room_admin")
     .to(`user_${reporter}`)
     .emit("incident:created", {
-      message: "Co su co moi vua dc bao cao",
+      message: "New incident reported successfully.",
       data: newIncident,
     });
 
   return res.status(201).json({
     success: true,
     message: "Incident created successfully.",
+    data: newIncident,
     incident: newIncident,
   });
 };
@@ -129,7 +130,7 @@ export const acceptIncident = async (req, res) => {
   if (!updatedIncident) {
     throw createHttpError(
       "This incident has already been accepted by another responder.",
-      400,
+      409,
     );
   }
 
@@ -139,13 +140,14 @@ export const acceptIncident = async (req, res) => {
     .to(`department_${incident.department}`)
     .to("room_admin")
     .emit("incident:accepted", {
-      message: "Sự cố đã được tiếp nhận",
+      message: "Incident accepted successfully.",
       data: updatedIncident,
     });
 
   return res.status(200).json({
     success: true,
     message: "Incident accepted successfully.",
+    data: updatedIncident,
     incident: updatedIncident,
   });
 };
@@ -214,13 +216,14 @@ export const resolveIncident = async (req, res) => {
   io.to(`user_${incident.reporter}`)
     .to("room_admin")
     .emit("incident:resolved", {
-      message: "Sự cố đã được xử lý hoàn thành",
+      message: "Incident resolved successfully.",
       data: updatedIncident,
     });
 
   return res.status(200).json({
     success: true,
     message: "Incident resolved successfully.",
+    data: updatedIncident,
     incident: updatedIncident,
   });
 };

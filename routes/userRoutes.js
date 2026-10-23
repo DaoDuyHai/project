@@ -14,10 +14,12 @@ router.post("/login", login);
 router.get(
   "/profile",
   authMiddleware,
-  authorizeRoles("teacher,student", "dispatcher", "admin"),
+  authorizeRoles("teacher", "student", "dispatcher", "admin"),
   (req, res) => {
     return res.status(200).json({
+      success: true,
       message: "Get user profile successfully.",
+      data: req.user,
       user: req.user,
     });
   },

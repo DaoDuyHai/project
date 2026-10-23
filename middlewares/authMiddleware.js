@@ -28,7 +28,7 @@ export const authorizeRoles = (...roles) => {
     try {
       if (!req.user || !req.user.role) {
         throw createHttpError(
-          "Ban chua dang nhap hoac khong co thong tin phan quyen",
+          "Unauthorized. Missing authentication or role information.",
           401,
         );
       }
@@ -36,7 +36,10 @@ export const authorizeRoles = (...roles) => {
       const hasPermission = roles.includes(req.user.role);
 
       if (!hasPermission) {
-        throw createHttpError("Ban khong co quyen truy cap tai lieu nay", 401);
+        throw createHttpError(
+          "Access denied. You do not have permission to access this resource.",
+          403,
+        );
       }
 
       next();

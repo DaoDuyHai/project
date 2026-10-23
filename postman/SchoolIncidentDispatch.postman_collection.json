@@ -1,0 +1,249 @@
+{
+  "info": {
+    "_postman_id": "school-incident-dispatch-collection-2026",
+    "name": "School Incident Dispatch System API",
+    "description": "Toàn bộ API của Hệ thống Điều phối & Xử lý sự cố học đường (Bao gồm Auth, Incidents, Dispatcher Workflow, và Admin Analytics).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication (Xác thực)",
+      "item": [
+        {
+          "name": "Register - Sinh viên (Reporter)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"student01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Nguyễn Văn Nam\",\n  \"role\": \"student\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Kỹ thuật viên (Dispatcher)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"tech01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Trần Hoàng Tuấn\",\n  \"role\": \"dispatcher\",\n  \"department\": \"TECHNICAL\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "register"]
+            }
+          }
+        },
+        {
+          "name": "Register - Quản trị viên (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"admin01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Thầy Hiệu Phó\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login - Đăng nhập lấy Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"student01\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        },
+        {
+          "name": "Profile - Xem thông tin tài khoản",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Reporter (Người báo cáo)",
+      "item": [
+        {
+          "name": "Tạo sự cố mới (Hỏng điện/nước -> TECHNICAL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Máy chiếu chập cháy bốc khói\",\n  \"location\": \"Phòng 302\",\n  \"type\": \"Hỏng điện/Nước/Thiết bị\",\n  \"description\": \"Có tia lửa điện và mùi khét\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents"]
+            }
+          }
+        },
+        {
+          "name": "Xem lịch sử sự cố đã gửi của tôi",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/my-reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "my-reports"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Dispatcher (Nhân viên điều phối)",
+      "item": [
+        {
+          "name": "Lấy danh sách việc đang chờ (PENDING theo khoa)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "pending"]
+            }
+          }
+        },
+        {
+          "name": "Lấy danh sách việc do tôi phụ trách",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/my-tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "my-tasks"]
+            }
+          }
+        },
+        {
+          "name": "Tiếp nhận sự cố (Atomic Lock)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/{{incidentId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "{{incidentId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Hoàn thành sự cố (Resolve)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resolutionNotes\": \"Đã thay bóng đèn và kiểm tra lại nguồn điện an toàn.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/{{incidentId}}/resolve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "{{incidentId}}", "resolve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Admin (Ban Giám Hiệu)",
+      "item": [
+        {
+          "name": "Lấy danh sách toàn trường (Có Lọc & Phân trang)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents?status=PENDING&department=TECHNICAL&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents"],
+              "query": [
+                { "key": "status", "value": "PENDING" },
+                { "key": "department", "value": "TECHNICAL" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Thống kê số liệu Analytics (Aggregation Pipeline)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "analytics"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
