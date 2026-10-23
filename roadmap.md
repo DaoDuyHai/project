@@ -13,7 +13,7 @@
 ## 🗺️ TỔNG QUAN LỘ TRÌNH 5 GIAI ĐOẠN
 
 ```
-[GĐ 0: ĐÃ XONG ✅] ──► [GĐ 1: Ngày 1-2] ──► [GĐ 2: Ngày 3-4] ──► [GĐ 3: Ngày 5-7] ──► [GĐ 4: Ngày 8-9] ──► [GĐ 5: Ngày 10]
+[GĐ 0: ĐÃ XONG ✅] ──► [GĐ 1: ĐÃ XONG ✅] ──► [GĐ 2: ĐÃ XONG ✅] ──► [GĐ 3: ĐÃ XONG ✅] ──► [GĐ 4: TIẾP THEO ⏳] ──► [GĐ 5: Ngày 10]
    Nền tảng Auth         CRUD Sự cố cơ bản     Vòng đời & Phân quyền   Gắn Real-time          Thống kê Admin         Đóng gói CV &
    (User, JWT, DB)       (REST API v1.0)       (Chống táy máy v1.2)   (Socket.io v2.0)       (Aggregation v2.2)     Luyện phỏng vấn
 ```
@@ -127,7 +127,7 @@
 
 ---
 
-## 🔴 GIAI ĐOẠN 3 (NGÀY 5 - NGÀY 7): GẮN REAL-TIME VỚI SOCKET.IO
+## 🔴 GIAI ĐOẠN 3 (NGÀY 5 - NGÀY 7): GẮN REAL-TIME VỚI SOCKET.IO — [ĐÃ XONG ✅]
 
 > **Mục tiêu:** Bây giờ toàn bộ hệ thống REST API đã chạy mượt mà, ta bắt đầu gắn **Socket.io** để biến nó thành hệ thống Thời gian thực.
 > **Sản phẩm đạt được:** Phiên bản **v2.0 (Realtime Dispatch System)**.
@@ -151,8 +151,8 @@
      req.io.to("admin_room").emit("new_incident", newIncident);
      ```
 - **Nghiệm thu Ngày 5:**
-  - [ ] Mở 2 tab trình duyệt/Postman Socket: 1 tab Dispatcher Kỹ thuật, 1 tab Reporter gửi sự cố điện.
-  - [ ] Vừa bấm gửi bên Reporter $\rightarrow$ Tab Dispatcher nhận được sự kiện `new_incident` ngay lập tức mà không cần reload!
+  - [x] Mở 2 tab trình duyệt/Postman Socket: 1 tab Dispatcher Kỹ thuật, 1 tab Reporter gửi sự cố điện (Đã test E2E tự động) ✅.
+  - [x] Vừa bấm gửi bên Reporter $\rightarrow$ Tab Dispatcher & Admin nhận được sự kiện `incident:created` ngay lập tức mà không cần reload ✅!
 
 ### Ngày 6: Real-time Cập nhật trạng thái (Accept & Resolve)
 
@@ -164,14 +164,18 @@
      - Phát tới Reporter: Báo tin sự cố đã được sửa xong (`incident_updated`).
      - Phát tới Admin: Cập nhật Dashboard (`incident_updated`).
 - **Nghiệm thu Ngày 6:**
-  - [ ] Dispatcher bấm nhận ca $\rightarrow$ Màn hình Reporter tự đổi màu Badge sang `IN_PROGRESS`!
-  - [ ] Dispatcher bấm hoàn thành $\rightarrow$ Màn hình Reporter tự đổi màu Badge sang `RESOLVED`!
+  - [x] Dispatcher bấm nhận ca $\rightarrow$ Màn hình Reporter & Admin tự cập nhật sang `IN_PROGRESS` (`incident:accepted`) ✅!
+  - [x] Dispatcher bấm hoàn thành $\rightarrow$ Màn hình Reporter & Admin tự cập nhật sang `RESOLVED` (`incident:resolved`) ✅!
 
 ### Ngày 7: Kiểm thử tổng hợp Real-time & Sửa lỗi
 
 - **Việc cần làm:**
   - Test kịch bản 3 bên hoạt động đồng thời (Reporter + Dispatcher + Admin).
   - Kiểm tra ngắt kết nối (Disconnect) và kết nối lại.
+- **Nghiệm thu Ngày 7:**
+  - [x] Test kịch bản đa vai trò hoạt động đồng thời (Reporter + Dispatcher TECHNICAL + Dispatcher MEDICAL + Admin) ✅.
+  - [x] Kiểm tra ngắt kết nối an toàn, từ chối kết nối khi thiếu Token JWT ✅.
+  - [x] Đạt kết quả kiểm thử tự động toàn diện `test_e2e.js`: **30/30 Test Case Passed (100% PASS)** ✅.
 
 \*🎯 **Đối chiếu API Contract: Xem Mục 6 (Bảng tổng hợp Socket.io) trong tài liệu API.\***
 
@@ -238,9 +242,9 @@
 | **GĐ 1**  | **2**  | API Danh sách cho Reporter & Dispatcher | `GET /my-reports`, `GET /pending`, `GET /my-tasks` (Mục 3.2, 4.1, 4.2) | ✅ Đã hoàn thành (v1.0 REST)   |
 | **GĐ 2**  | **3**  | Phân quyền RBAC + API Nhận việc         | `PATCH /api/incidents/:id/accept` (Mục 4.1)                            | ✅ Đã hoàn thành (RBAC 403)   |
 | **GĐ 2**  | **4**  | API Hoàn thành + Danh sách Admin        | `PATCH /api/incidents/:id/resolve`, `GET /incidents` (Mục 4.2, 5.1)    | ✅ Đã hoàn thành (v1.2 REST)  |
-| **GĐ 3**  | **5**  | Setup Socket.io Server + Push sự cố mới | Gắn `new_incident` vào hàm tạo sự cố (Mục 6)                           | ⏳ TIẾP THEO (Bắt đầu GĐ 3)   |
-| **GĐ 3**  | **6**  | Real-time Cập nhật trạng thái 2 chiều   | Gắn `incident_accepted`, `incident_updated` (Mục 6)                    |  ⏳ Chờ làm  |
-| **GĐ 3**  | **7**  | Kiểm thử toàn diện Real-time 3 bên      | Test luồng end-to-end                                                  |  ⏳ Chờ làm  |
-| **GĐ 4**  | **8**  | Aggregation Pipeline Thống kê           | `GET /api/incidents/analytics` (Mục 5.2)                               |  ⏳ Chờ làm  |
+| **GĐ 3**  | **5**  | Setup Socket.io Server + Push sự cố mới | Gắn `incident:created` vào hàm tạo sự cố (Mục 6)                      | ✅ Đã hoàn thành (Socket.io push) |
+| **GĐ 3**  | **6**  | Real-time Cập nhật trạng thái 2 chiều   | Gắn `incident:accepted`, `incident:resolved` (Mục 6)                  | ✅ Đã hoàn thành (2-way live) |
+| **GĐ 3**  | **7**  | Kiểm thử toàn diện Real-time 3 bên      | Test luồng end-to-end `test_e2e.js`                                    | ✅ Đã hoàn thành (30/30 PASS) |
+| **GĐ 4**  | **8**  | Aggregation Pipeline Thống kê           | `GET /api/incidents/analytics` (Mục 5.2)                               | ⏳ TIẾP THEO (Bắt đầu GĐ 4)   |
 | **GĐ 4**  | **9**  | Hoàn thiện Admin Dashboard & Phân trang | Rà soát toàn bộ hệ thống                                               |  ⏳ Chờ làm  |
 | **GĐ 5**  | **10** | Đẩy GitHub, Viết CV, Luyện phỏng vấn    | ĐÓNG GÓI DỰ ÁN                                                         |  ⏳ Chờ làm  |
