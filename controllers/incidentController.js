@@ -28,6 +28,18 @@ export const createIncident = async (req, res) => {
     reporter,
   });
 
+  await newIncident.populate("reporter", "fullName userName department");
+
+  const io = req.app.get("io");
+
+  io.to(`department_${department}`)
+    .to("room_admin")
+    .to(`user_${reporter}`)
+    .emit("incident:created", {
+      message: "Co su co moi vua dc bao cao",
+      data: newIncident,
+    });
+
   return res.status(201).json({
     success: true,
     message: "Incident created successfully.",
@@ -37,9 +49,11 @@ export const createIncident = async (req, res) => {
 
 // 2. Lấy danh sách sự cố của chính mình (Reporter Tab 2)
 export const getReports = async (req, res) => {
-  const incidents = await Incident.find({ reporter: req.user.userId }).sort({
-    createdAt: -1,
-  });
+  const incidents = await Incident.find({ reporter: req.user.userId })
+    .populate("reporter", "fullName userName department")
+    .sort({
+      createdAt: -1,
+    });
 
   return res.status(200).json({
     success: true,
@@ -119,6 +133,16 @@ export const acceptIncident = async (req, res) => {
     );
   }
 
+  const io = req.app.get("io");
+
+  io.to(`user_${incident.reporter}`)
+    .to(`department_${incident.department}`)
+    .to("room_admin")
+    .emit("incident:accepted", {
+      message: "Sự cố đã được tiếp nhận",
+      data: updatedIncident,
+    });
+
   return res.status(200).json({
     success: true,
     message: "Incident accepted successfully.",
@@ -184,6 +208,15 @@ export const resolveIncident = async (req, res) => {
       400,
     );
   }
+
+  const io = req.app.get("io");
+
+  io.to(`user_${incident.reporter}`)
+    .to("room_admin")
+    .emit("incident:resolved", {
+      message: "Sự cố đã được xử lý hoàn thành",
+      data: updatedIncident,
+    });
 
   return res.status(200).json({
     success: true,
