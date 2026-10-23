@@ -3,6 +3,7 @@ import "dotenv/config";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import incidentRoutes from "./routes/incidentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 import { errorHandler } from "./middlewares/errorHandler.js";
 
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use("/api/users", userRoutes);
 
 app.use("/api/incidents", incidentRoutes);
+
+app.use("/api", adminRoutes);
 
 // Middleware xử lý lỗi tập trung
 app.use(errorHandler);

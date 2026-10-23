@@ -6,7 +6,7 @@
 >
 > 1. _"Làm đến đâu – Hoàn thiện sản phẩm đến đó"_ (Mỗi giai đoạn kết thúc = 1 bản chạy được 100% trên Postman).
 > 2. **Làm toàn bộ REST API (req/res) trước $\rightarrow$ Test mượt mà $\rightarrow$ Mới gắn Socket.io Real-time sau cùng.**
-> 3. Mọi chi tiết về Input/Output của API, xem đối chiếu tại file: [`TAI_LIEU_API_VA_YEU_CAU_FRONTEND.md`](file:///d:/SchoolIncidentDispatch/TAI_LIEU_API_VA_YEU_CAU_FRONTEND.md).
+> 3. Mọi chi tiết về Input/Output của API, xem đối chiếu tại file: [`tailieufe.md`](file:///d:/SchoolIncidentDispatch/tailieufe.md).
 
 ---
 
@@ -121,7 +121,7 @@
 - **Nghiệm thu Ngày 4:**
   - [x] Nhân viên A bấm hoàn thành ca của Nhân viên B $\rightarrow$ Bị chặn `403 Forbidden` ✅.
   - [x] Đúng người phụ trách bấm hoàn thành $\rightarrow$ Thành công chuyển `RESOLVED`, lưu `resolvedAt` và `resolutionNotes` ✅.
-  - [ ] Tài khoản không phải Admin vào `GET /api/incidents` $\rightarrow$ Bị chặn `403 Forbidden` (Viết nốt API Admin vào ngày mai).
+  - [x] Tài khoản không phải Admin vào `GET /api/incidents` $\rightarrow$ Bị chặn `403 Forbidden` ✅.
 
 \*🎯 **Đối chiếu API Contract: Xem Mục 4.1 (Action Nhận việc), Mục 4.2 (Action Hoàn thành), Mục 5.1 trong tài liệu API.\***
 
@@ -236,9 +236,9 @@
 | **GĐ 0**  | **0**  | Nền tảng Auth, MVC, MongoDB             | `POST /register`, `POST /login`, `GET /profile` (Mục 2)                |            ✅ Xong             |
 | **GĐ 1**  | **1**  | Incident Model + API Báo sự cố          | `POST /api/incidents` (Mục 3.1)                                        |       ✅ Đã hoàn thành         |
 | **GĐ 1**  | **2**  | API Danh sách cho Reporter & Dispatcher | `GET /my-reports`, `GET /pending`, `GET /my-tasks` (Mục 3.2, 4.1, 4.2) | ✅ Đã hoàn thành (v1.0 REST)   |
-| **GĐ 2**  | **3**  | Phân quyền RBAC + API Nhận việc         | `PATCH /api/incidents/:id/accept` (Mục 4.1)                            | ✅ Đã viết xong logic cốt lõi |
-| **GĐ 2**  | **4**  | API Hoàn thành + Danh sách Admin        | `PATCH /api/incidents/:id/resolve`, `GET /incidents` (Mục 4.2, 5.1)    | ⏳ Còn nốt API Admin vào ngày mai |
-| **GĐ 3**  | **5**  | Setup Socket.io Server + Push sự cố mới | Gắn `new_incident` vào hàm tạo sự cố (Mục 6)                           |  ⏳ Chờ làm  |
+| **GĐ 2**  | **3**  | Phân quyền RBAC + API Nhận việc         | `PATCH /api/incidents/:id/accept` (Mục 4.1)                            | ✅ Đã hoàn thành (RBAC 403)   |
+| **GĐ 2**  | **4**  | API Hoàn thành + Danh sách Admin        | `PATCH /api/incidents/:id/resolve`, `GET /incidents` (Mục 4.2, 5.1)    | ✅ Đã hoàn thành (v1.2 REST)  |
+| **GĐ 3**  | **5**  | Setup Socket.io Server + Push sự cố mới | Gắn `new_incident` vào hàm tạo sự cố (Mục 6)                           | ⏳ TIẾP THEO (Bắt đầu GĐ 3)   |
 | **GĐ 3**  | **6**  | Real-time Cập nhật trạng thái 2 chiều   | Gắn `incident_accepted`, `incident_updated` (Mục 6)                    |  ⏳ Chờ làm  |
 | **GĐ 3**  | **7**  | Kiểm thử toàn diện Real-time 3 bên      | Test luồng end-to-end                                                  |  ⏳ Chờ làm  |
 | **GĐ 4**  | **8**  | Aggregation Pipeline Thống kê           | `GET /api/incidents/analytics` (Mục 5.2)                               |  ⏳ Chờ làm  |

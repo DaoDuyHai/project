@@ -23,4 +23,25 @@ export const authMiddleware = (req, res, next) => {
   }
 };
 
-export const authenticate = authMiddleware;
+export const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    try {
+      if (!req.user || !req.user.role) {
+        throw createHttpError(
+          "Ban chua dang nhap hoac khong co thong tin phan quyen",
+          401,
+        );
+      }
+
+      const hasPermission = roles.includes(req.user.role);
+
+      if (!hasPermission) {
+        throw createHttpError("Ban khong co quyen truy cap tai lieu nay", 401);
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};

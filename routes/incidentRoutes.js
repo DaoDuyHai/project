@@ -1,5 +1,8 @@
 import express from "express";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
+import {
+  authMiddleware,
+  authorizeRoles,
+} from "../middlewares/authMiddleware.js";
 import {
   createIncident,
   getReports,
@@ -11,18 +14,17 @@ import {
 
 const router = express.Router();
 
-// RESTful route: POST /api/incidents
-router.post("/", authMiddleware, createIncident);
+// 1. Áp dụng xác thực đăng nhập cho TẤT CẢ các route sự cố (không cần lặp lại ở từng route)
+router.use(authMiddleware);
 
-router.get("/my-reports", authMiddleware, getReports);
+// 2. Nhóm route dành cho Người báo cáo (Reporter: Học sinh & Giáo viên)
+router.post("/", authorizeRoles("student", "teacher"), createIncident);
+router.get("/my-reports", authorizeRoles("student", "teacher"), getReports);
 
-// Sửa lỗi: Thêm dấu gạch chéo / trước pending
-router.get("/pending", authMiddleware, getPendings);
-
-router.get("/my-tasks", authMiddleware, getTasks);
-
-router.patch("/:id/accept", authMiddleware, acceptIncident);
-
-router.patch("/:id/resolve", authMiddleware, resolveIncident);
+// 3. Nhóm route dành riêng cho Nhân viên điều phối (Dispatcher)
+router.get("/pending", authorizeRoles("dispatcher"), getPendings);
+router.get("/my-tasks", authorizeRoles("dispatcher"), getTasks);
+router.patch("/:id/accept", authorizeRoles("dispatcher"), acceptIncident);
+router.patch("/:id/resolve", authorizeRoles("dispatcher"), resolveIncident);
 
 export default router;
