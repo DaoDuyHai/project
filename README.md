@@ -11,7 +11,7 @@
 > **Backend RESTful API & Real-time Event Dispatching System**  
 > Xây dựng với **Node.js, Express 5, MongoDB (Mongoose), Socket.io và JWT RBAC**.  
 > Tác giả: **Đào Duy Hải** ([@DaoDuyHai](https://github.com/DaoDuyHai))  
-> Repository: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
+> Repository: [https://github.com/DaoDuyHai/school-incident-dispatch](https://github.com/DaoDuyHai/school-incident-dispatch)
 
 ---
 
@@ -209,8 +209,8 @@ Mọi phản hồi thành công đều tuân thủ cấu trúc chuẩn:
 
 ### Bước 1: Clone repository về máy
 ```bash
-git clone https://github.com/DaoDuyHai/project.git
-cd project
+git clone https://github.com/DaoDuyHai/school-incident-dispatch.git
+cd school-incident-dispatch
 ```
 
 ### Bước 2: Cài đặt các thư viện phụ thuộc
@@ -279,4 +279,4 @@ Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:
 ### 👨‍💻 Tác giả
 - **Đào Duy Hải**
 - GitHub: [@DaoDuyHai](https://github.com/DaoDuyHai)
-- Repository: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
+- Repository: [https://github.com/DaoDuyHai/school-incident-dispatch](https://github.com/DaoDuyHai/school-incident-dispatch)
