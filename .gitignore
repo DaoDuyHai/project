@@ -49,3 +49,7 @@ ehthumbs.db
 Thumbs.db
 Desktop.ini
 
+# --- Postman Local Workspace ---
+.postman/
+postman/*/
+!postman/SchoolIncidentDispatch.postman_collection.json

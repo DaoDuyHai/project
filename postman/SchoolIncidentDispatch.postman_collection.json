@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "school-incident-dispatch-collection-2026",
     "name": "School Incident Dispatch System API",
-    "description": "Toàn bộ API của Hệ thống Điều phối & Xử lý sự cố học đường (Bao gồm Auth, Incidents, Dispatcher Workflow, và Admin Analytics).",
+    "description": "Toàn bộ bộ sưu tập RESTful API phục vụ kiểm thử Hệ thống Điều phối & Xử lý sự cố học đường (Authentication, Student Reports, Dispatcher Workflow, Admin Analytics, và RBAC Negative Tests).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -15,20 +15,42 @@
       "key": "token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "incidentId",
+      "value": "",
+      "type": "string"
     }
   ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
-      "name": "1. Authentication (Xác thực)",
+      "name": "1. Authentication",
+      "description": "Các API phục vụ đăng ký, đăng nhập (có Test Script tự động bắt và lưu JWT Token vào biến collection), và xem profile cá nhân.",
       "item": [
         {
-          "name": "Register - Sinh viên (Reporter)",
+          "name": "Register - Student",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"student01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Nguyễn Văn Nam\",\n  \"role\": \"student\"\n}"
+              "raw": "{\n  \"userName\": \"student_new\",\n  \"password\": \"123456\",\n  \"fullName\": \"Học Sinh Mới\",\n  \"role\": \"student\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/register",
@@ -38,13 +60,19 @@
           }
         },
         {
-          "name": "Register - Kỹ thuật viên (Dispatcher)",
+          "name": "Register - Dispatcher (Technical)",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"tech01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Trần Hoàng Tuấn\",\n  \"role\": \"dispatcher\",\n  \"department\": \"TECHNICAL\"\n}"
+              "raw": "{\n  \"userName\": \"tech_new\",\n  \"password\": \"123456\",\n  \"fullName\": \"Kỹ Thuật Viên Mới\",\n  \"role\": \"dispatcher\",\n  \"department\": \"TECHNICAL\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/register",
@@ -54,13 +82,19 @@
           }
         },
         {
-          "name": "Register - Quản trị viên (Admin)",
+          "name": "Register - Admin",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"admin01\",\n  \"password\": \"password123\",\n  \"fullName\": \"Thầy Hiệu Phó\",\n  \"role\": \"admin\"\n}"
+              "raw": "{\n  \"userName\": \"admin_new\",\n  \"password\": \"123456\",\n  \"fullName\": \"Quản Trị Viên Mới\",\n  \"role\": \"admin\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/register",
@@ -70,13 +104,35 @@
           }
         },
         {
-          "name": "Login - Đăng nhập lấy Token",
+          "name": "Login - Student (student01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "const token = jsonData.token || (jsonData.data && jsonData.data.token);",
+                  "if (token) {",
+                  "    pm.collectionVariables.set(\"token\", token);",
+                  "    console.log(\"✔ Token tự động cập nhật cho Student: student01\");",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userName\": \"student01\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"userName\": \"student01\",\n  \"password\": \"123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/login",
@@ -86,12 +142,124 @@
           }
         },
         {
-          "name": "Profile - Xem thông tin tài khoản",
+          "name": "Login - Dispatcher Kỹ thuật (tech01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "const token = jsonData.token || (jsonData.data && jsonData.data.token);",
+                  "if (token) {",
+                  "    pm.collectionVariables.set(\"token\", token);",
+                  "    console.log(\"✔ Token tự động cập nhật cho Dispatcher Kỹ Thuật: tech01\");",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"tech01\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Dispatcher Y tế (tech02)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "const token = jsonData.token || (jsonData.data && jsonData.data.token);",
+                  "if (token) {",
+                  "    pm.collectionVariables.set(\"token\", token);",
+                  "    console.log(\"✔ Token tự động cập nhật cho Dispatcher Y Tế: tech02\");",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"tech02\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login - Admin (admin01)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "const token = jsonData.token || (jsonData.data && jsonData.data.token);",
+                  "if (token) {",
+                  "    pm.collectionVariables.set(\"token\", token);",
+                  "    console.log(\"✔ Token tự động cập nhật cho Admin: admin01\");",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"admin01\",\n  \"password\": \"123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        },
+        {
+          "name": "Profile - Xem thông tin tài khoản hiện tại (Get Me)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users/profile",
               "host": ["{{baseUrl}}"],
@@ -102,19 +270,37 @@
       ]
     },
     {
-      "name": "2. Reporter (Người báo cáo)",
+      "name": "2. Incidents - Student",
+      "description": "Các API dành cho Người báo cáo (Học sinh / Giáo viên) để tạo sự cố và theo dõi danh sách sự cố cá nhân.",
       "item": [
         {
-          "name": "Tạo sự cố mới (Hỏng điện/nước -> TECHNICAL)",
+          "name": "Tạo sự cố mới (Hỏng điện/Nước -> TECHNICAL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) {",
+                  "    pm.collectionVariables.set(\"incidentId\", jsonData.data._id);",
+                  "    console.log(\"✔ Đã tự động lưu incidentId mới tạo:\", jsonData.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Máy chiếu chập cháy bốc khói\",\n  \"location\": \"Phòng 302\",\n  \"type\": \"Hỏng điện/Nước/Thiết bị\",\n  \"description\": \"Có tia lửa điện và mùi khét\"\n}"
+              "raw": "{\n  \"title\": \"Đèn trần nhấp nháy bốc khói\",\n  \"location\": \"Phòng học B204\",\n  \"type\": \"Hỏng điện/Nước/Thiết bị\",\n  \"description\": \"Đèn trần phát tiếng kêu rè rè và có khói bốc ra.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/incidents",
@@ -124,12 +310,46 @@
           }
         },
         {
-          "name": "Xem lịch sử sự cố đã gửi của tôi",
+          "name": "Tạo sự cố mới (Y tế/Cấp cứu -> MEDICAL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) {",
+                  "    pm.collectionVariables.set(\"incidentId\", jsonData.data._id);",
+                  "    console.log(\"✔ Đã tự động lưu incidentId mới tạo:\", jsonData.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Học sinh bị chảy máu cam liên tục\",\n  \"location\": \"Phòng tự học thư viện\",\n  \"type\": \"Tai nạn/Sức khỏe/Cấp cứu\",\n  \"description\": \"Học sinh hoa mắt chóng mặt và chảy nhiều máu mũi.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents"]
+            }
+          }
+        },
+        {
+          "name": "Xem danh sách sự cố của tôi (My Reports)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents/my-reports",
               "host": ["{{baseUrl}}"],
@@ -140,15 +360,29 @@
       ]
     },
     {
-      "name": "3. Dispatcher (Nhân viên điều phối)",
+      "name": "3. Dispatcher Workflow",
+      "description": "Quy trình điều phối và xử lý sự cố của Kỹ thuật viên / Y tế: Xem việc chờ, Nhận việc (Khóa nguyên tử), và Hoàn thành.",
       "item": [
         {
-          "name": "Lấy danh sách việc đang chờ (PENDING theo khoa)",
+          "name": "Xem danh sách sự cố chờ tiếp nhận (PENDING theo khoa)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (Array.isArray(jsonData.data) && jsonData.data.length > 0) {",
+                  "    pm.collectionVariables.set(\"incidentId\", jsonData.data[0]._id);",
+                  "    console.log(\"✔ Đã lưu incidentId chờ xử lý:\", jsonData.data[0]._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents/pending",
               "host": ["{{baseUrl}}"],
@@ -157,12 +391,10 @@
           }
         },
         {
-          "name": "Lấy danh sách việc do tôi phụ trách",
+          "name": "Xem danh sách công việc do tôi phụ trách (My Tasks)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents/my-tasks",
               "host": ["{{baseUrl}}"],
@@ -171,12 +403,10 @@
           }
         },
         {
-          "name": "Tiếp nhận sự cố (Atomic Lock)",
+          "name": "Tiếp nhận sự cố (Atomic Concurrency Lock)",
           "request": {
             "method": "PATCH",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents/{{incidentId}}/accept",
               "host": ["{{baseUrl}}"],
@@ -185,16 +415,18 @@
           }
         },
         {
-          "name": "Hoàn thành sự cố (Resolve)",
+          "name": "Hoàn thành sự cố (Resolve & Ownership Check)",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{token}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resolutionNotes\": \"Đã thay bóng đèn và kiểm tra lại nguồn điện an toàn.\"\n}"
+              "raw": "{\n  \"resolutionNotes\": \"Đã sửa chữa và kiểm tra lại toàn bộ trang thiết bị an toàn.\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/incidents/{{incidentId}}/resolve",
@@ -206,35 +438,125 @@
       ]
     },
     {
-      "name": "4. Admin (Ban Giám Hiệu)",
+      "name": "4. Admin Management",
+      "description": "Các API phân quyền Quản trị viên (Admin): Giám sát toàn bộ sự cố (lọc động & phân trang) và Thống kê tổng hợp (Aggregation Pipeline).",
       "item": [
         {
-          "name": "Lấy danh sách toàn trường (Có Lọc & Phân trang)",
+          "name": "Xem danh sách toàn trường (Lọc động & Phân trang)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents?status=PENDING&department=TECHNICAL&page=1&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["api", "incidents"],
               "query": [
-                { "key": "status", "value": "PENDING" },
-                { "key": "department", "value": "TECHNICAL" },
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                },
+                {
+                  "key": "department",
+                  "value": "TECHNICAL"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           }
         },
         {
-          "name": "Thống kê số liệu Analytics (Aggregation Pipeline)",
+          "name": "Thống kê số liệu Analytics (MongoDB Aggregation Pipeline)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{token}}" }
-            ],
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "analytics"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. RBAC Negative Tests (Kiểm tra chặn quyền)",
+      "description": "Bộ test kiểm thử ma trận phân quyền: Mô phỏng hành vi vượt quyền (Student gọi API Admin/Dispatcher) để chứng minh server luôn trả về đúng HTTP 403 Forbidden.",
+      "item": [
+        {
+          "name": "Student cố tình gọi API Analytics của Admin (Kỳ vọng: 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bảo mật: Chặn sinh viên truy cập route Admin (Trả về 403 Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "analytics"]
+            }
+          }
+        },
+        {
+          "name": "Student cố tình gọi API Tiếp nhận sự cố của Dispatcher (Kỳ vọng: 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bảo mật: Chặn sinh viên tự nhận xử lý sự cố (Trả về 403 Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/incidents/{{incidentId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "incidents", "{{incidentId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Dispatcher Kỹ thuật cố tình gọi API Analytics của Admin (Kỳ vọng: 403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bảo mật: Chặn Dispatcher truy cập bảng Analytics của Admin (Trả về 403 Forbidden)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/incidents/analytics",
               "host": ["{{baseUrl}}"],
@@ -246,4 +568,3 @@
     }
   ]
 }
-

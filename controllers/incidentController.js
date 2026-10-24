@@ -44,7 +44,6 @@ export const createIncident = async (req, res) => {
     success: true,
     message: "Incident created successfully.",
     data: newIncident,
-    incident: newIncident,
   });
 };
 
@@ -125,7 +124,9 @@ export const acceptIncident = async (req, res) => {
     {
       new: true,
     },
-  );
+  )
+    .populate("reporter", "fullName userName department")
+    .populate("responder", "fullName userName department");
 
   if (!updatedIncident) {
     throw createHttpError(
@@ -148,7 +149,6 @@ export const acceptIncident = async (req, res) => {
     success: true,
     message: "Incident accepted successfully.",
     data: updatedIncident,
-    incident: updatedIncident,
   });
 };
 
@@ -202,7 +202,9 @@ export const resolveIncident = async (req, res) => {
     {
       new: true,
     },
-  );
+  )
+    .populate("reporter", "fullName userName department")
+    .populate("responder", "fullName userName department");
 
   if (!updatedIncident) {
     throw createHttpError(
@@ -224,6 +226,5 @@ export const resolveIncident = async (req, res) => {
     success: true,
     message: "Incident resolved successfully.",
     data: updatedIncident,
-    incident: updatedIncident,
   });
 };

@@ -221,15 +221,16 @@ SECRET_KEY=your_jwt_secret_key_here
 ```
 
 ### 4. Khởi tạo dữ liệu mẫu (Seeding)
-Chạy script seed để tạo sẵn 4 tài khoản đại diện cho 4 vai trò kèm dữ liệu sự cố mẫu:
+Chạy script seed để tự động dọn sạch database và nạp 5 tài khoản mẫu kèm 5 sự cố mẫu bao phủ mọi trạng thái:
 ```bash
 npm run seed
 ```
-*Tài khoản mẫu được tạo tự động:*
-- **Admin:** `admin` / mật khẩu: `admin123`
-- **Kỹ thuật viên:** `tech_tuan` / mật khẩu: `password123` (Khoa: `TECHNICAL`)
-- **Nhân viên Y tế:** `med_hoa` / mật khẩu: `password123` (Khoa: `MEDICAL`)
-- **Sinh viên:** `student_nam` / mật khẩu: `password123`
+*Tài khoản mẫu được tạo tự động (Mật khẩu mặc định chung: `123`):*
+- **Admin:** `admin01` / mật khẩu: `123`
+- **Kỹ thuật viên:** `tech01` / mật khẩu: `123` (Khoa: `TECHNICAL`)
+- **Nhân viên Y tế:** `tech02` / mật khẩu: `123` (Khoa: `MEDICAL`)
+- **Sinh viên 1:** `student01` / mật khẩu: `123`
+- **Sinh viên 2:** `student02` / mật khẩu: `123`
 
 ### 5. Khởi chạy Server
 ```bash
@@ -245,8 +246,9 @@ Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:
 `postman/SchoolIncidentDispatch.postman_collection.json`
 
 1. Mở Postman → Chọn **Import** → Chọn file `.json` trên.
-2. Bộ sưu tập sẽ tự động tạo sẵn 11 Request với đầy đủ URL, Header và Body JSON mẫu.
-3. Chạy request `Login` tương ứng với tài khoản cần kiểm thử, sao chép mã Token trả về vào biến collection `token` để bắt đầu gửi các yêu cầu có xác thực.
+2. Bộ sưu tập cấu hình sẵn **Authorization cấp Collection**, biến môi trường `{{baseUrl}}` và `{{token}}`.
+3. **Cơ chế Auto-Token thông minh:** Mỗi request Login trong folder `1. Authentication` đều tích hợp sẵn Test Script tự động bắt và lưu `token` vào biến collection. Bạn chỉ cần bấm **Send** vào tài khoản muốn kiểm thử, token sẽ tự động cập nhật cho toàn bộ API mà không cần sao chép thủ công!
+4. **Folder `5. RBAC Negative Tests`:** Cung cấp sẵn các kịch bản kiểm thử bảo mật (Student cố tình gọi API Admin/Dispatcher) với assertion tự động xác thực mã lỗi `403 Forbidden`.
 
 ---
 

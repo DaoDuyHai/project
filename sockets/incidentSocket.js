@@ -1,16 +1,24 @@
 import jwt from "jsonwebtoken";
 
 export const initIncidentSocket = (io) => {
-  // 1. Middleware xác thực Token
+  // 1. Middleware xác thực Token (Hỗ trợ cả handshake.auth và header authorization)
   io.use((socket, next) => {
-    const token = socket.handshake.auth?.token;
+    let token = socket.handshake.auth?.token;
+
+    if (!token && socket.handshake.headers?.authorization) {
+      const parts = socket.handshake.headers.authorization.split(" ");
+      if (parts.length === 2 && parts[0] === "Bearer") {
+        token = parts[1];
+      }
+    }
+
     if (!token) {
       return next(new Error("Authentication token required"));
     }
 
     try {
       const decoded = jwt.verify(token, process.env.SECRET_KEY);
-      // Gắn thông tin giải mã được vào chính socket này
+      // Gắn thông tin người dùng đã giải mã vào socket instance
       socket.user = decoded;
       next();
     } catch (error) {
@@ -18,19 +26,19 @@ export const initIncidentSocket = (io) => {
     }
   });
 
-  // 2. Khi kết nối thành công -> Phân phòng (Rooms)
+  // 2. Khi kết nối thành công -> Phân bổ Socket Rooms
   io.on("connection", (socket) => {
     const { userId, role, department } = socket.user;
 
-    // Phòng cá nhân
+    // Phòng riêng cá nhân (nhận phản hồi trực tiếp của chính mình)
     socket.join(`user_${userId}`);
 
-    // Phòng cho nhân viên điều phối theo khoa/phòng ban
+    // Phòng nghiệp vụ theo khoa cho nhân viên điều phối (Dispatcher)
     if (role === "dispatcher" && department) {
       socket.join(`department_${department}`);
     }
 
-    // Phòng cho Admin
+    // Phòng giám sát toàn viện dành riêng cho Admin
     if (role === "admin") {
       socket.join("room_admin");
     }

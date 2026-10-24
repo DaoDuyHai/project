@@ -43,7 +43,7 @@ export const getAnalytics = async (req, res) => {
       { $group: { _id: "$location", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 3 },
-      { $project: { _id: 0, location: "$_id", count: 1 } }, // 👈 Đổi _id thành location
+      { $project: { _id: 0, location: "$_id", count: 1 } },
     ]),
   ]);
 
@@ -54,7 +54,7 @@ export const getAnalytics = async (req, res) => {
     if (item._id === "IN_PROGRESS") summary.inProgress = item.count;
     if (item._id === "RESOLVED") summary.resolved = item.count;
 
-    summary.total += item.count; // 👈 Sửa thành summary.total
+    summary.total += item.count;
   });
 
   const byDepartment = { TECHNICAL: 0, MEDICAL: 0 };

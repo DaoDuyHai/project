@@ -54,13 +54,6 @@ export const register = async (req, res) => {
       role: newUser.role,
       department: newUser.department,
     },
-    user: {
-      _id: newUser._id,
-      userName: newUser.userName,
-      fullName: newUser.fullName,
-      role: newUser.role,
-      department: newUser.department,
-    },
   });
 };
 
@@ -99,13 +92,6 @@ export const login = async (req, res) => {
     message: "Login successful.",
     token,
     data: {
-      _id: existingUser._id,
-      userName: existingUser.userName,
-      fullName: existingUser.fullName,
-      role: existingUser.role,
-      department: existingUser.department,
-    },
-    user: {
       _id: existingUser._id,
       userName: existingUser.userName,
       fullName: existingUser.fullName,

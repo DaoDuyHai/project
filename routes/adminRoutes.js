@@ -7,12 +7,12 @@ import { getIncidents, getAnalytics } from "../controllers/adminController.js";
 
 const router = express.Router();
 
-// Tự động bảo vệ TẤT CẢ các route admin: Bắt buộc đăng nhập VÀ có quyền Admin
-router.use(authMiddleware, authorizeRoles("admin"));
+const adminGuard = [authMiddleware, authorizeRoles("admin")];
 
-// Lấy toàn bộ sự cố toàn trường (có hỗ trợ lọc theo ?status=...&department=...)
-router.get("/incidents", getIncidents);
+// 1. Lấy toàn bộ sự cố toàn trường (Admin có quyền xem và lọc phân trang)
+router.get("/incidents", adminGuard, getIncidents);
 
-router.get("/incidents/analytics", getAnalytics);
+// 2. Thống kê số liệu KPI Analytics (MongoDB Aggregation Pipeline)
+router.get("/incidents/analytics", adminGuard, getAnalytics);
 
 export default router;

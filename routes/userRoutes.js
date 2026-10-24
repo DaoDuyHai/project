@@ -20,7 +20,6 @@ router.get(
       success: true,
       message: "Get user profile successfully.",
       data: req.user,
-      user: req.user,
     });
   },
 );
