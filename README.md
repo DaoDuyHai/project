@@ -9,29 +9,29 @@
 [![Postman](https://img.shields.io/badge/Postman-Collection_v2.1-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/)
 
 > **Backend RESTful API & Real-time Event Dispatching System**  
-> Dự án Backend chuyên sâu xây dựng bởi **Đào Duy Hải** ([@DaoDuyHai](https://github.com/DaoDuyHai)).  
-> Repository chính thức: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
+> Xây dựng với **Node.js, Express 5, MongoDB (Mongoose), Socket.io và JWT RBAC**.  
+> Tác giả: **Đào Duy Hải** ([@DaoDuyHai](https://github.com/DaoDuyHai))  
+> Repository: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
 
 ---
 
 ## 📑 MỤC LỤC
-1. [Kiến Trúc Hệ Thống & Luồng Dữ Liệu](#1-kiến-trúc-hệ-thống--luồng-dữ-liệu)
-2. [Đặc Điểm Kỹ Thuật Nổi Bật (Key Engineering Highlights)](#2-đặc-điểm-kỹ-thuật-nổi-bật-key-engineering-highlights)
+1. [Kiến Trúc Tổng Quan](#1-kiến-trúc-tổng-quan)
+2. [Đặc Điểm Kỹ Thuật Nổi Bật](#2-đặc-điểm-kỹ-thuật-nổi-bật)
 3. [Phân Hệ Người Dùng & Ma Trận Phân Quyền (RBAC)](#3-phân-hệ-người-dùng--ma-trận-phân-quyền-rbac)
-4. [Vòng Đời Sự Cố & Cơ Chế Khóa Nguyên Tử Chống Race Condition](#4-vòng-đời-sự-cố--cơ-chế-khóa-nguyên-tử-chống-race-condition)
+4. [Vòng Đời Sự Cố & Cơ Chế Kiểm Soát Tranh Chấp (Concurrency Control)](#4-vòng-đời-sự-cố--cơ-chế-kiểm-soát-tranh-chấp-concurrency-control)
 5. [Hệ Thống Real-Time Với Socket.io Rooms](#5-hệ-thống-real-time-với-socketio-rooms)
-6. [Cấu Trúc Thư Mục Chuẩn MVC](#6-cấu-trúc-thư-mục-chuẩn-mvc)
+6. [Cấu Trúc Thư Mục MVC](#6-cấu-trúc-thư-mục-mvc)
 7. [Danh Sách REST API Endpoints (11 Endpoints)](#7-danh-sách-rest-api-endpoints-11-endpoints)
-8. [Hướng Dẫn Cài Đặt & Chạy Thử Nhanh Trong 60 Giây](#8-hướng-dẫn-cài-đặt--chạy-thử-nhanh-trong-60-giây)
-9. [Bộ Kiểm Thử Postman Collection Chuyên Nghiệp (Auto-Token)](#9-bộ-kiểm-thử-postman-collection-chuyên-nghiệp-auto-token)
-10. [Báo Cáo Kiểm Thử Tự Động (E2E Test Suite)](#10-báo-cáo-kiểm-thử-tự-động-e2e-test-suite)
-11. [Lộ Trình Mở Rộng (Future Roadmap)](#11-lộ-trình-mở-rộng-future-roadmap)
+8. [Hướng Dẫn Cài Đặt & Chạy Thử Nhanh](#8-hướng-dẫn-cài-đặt--chạy-thử-nhanh)
+9. [Kiểm Thử Qua Postman Collection (Auto-Token)](#9-kiểm-thử-qua-postman-collection-auto-token)
+10. [Lộ Trình Mở Rộng (Future Roadmap)](#10-lộ-trình-mở-rộng-future-roadmap)
 
 ---
 
-## 1. KIẾN TRÚC HỆ THỐNG & LUỒNG DỮ LIỆU
+## 1. KIẾN TRÚC TỔNG QUAN
 
-> **Phạm vi đồ án:** Repository này là **mã nguồn Backend Core**. Các khối "Client (Dự kiến)" trong sơ đồ dưới đây mô tả các phân hệ người dùng trên giao diện để minh họa luồng luân chuyển dữ liệu thực tế.
+> **Lưu ý:** Repository này là **mã nguồn Backend**. Các khối "Client (Dự kiến)" trong sơ đồ dưới đây mô tả các phân hệ người dùng trên giao diện để minh họa luồng luân chuyển dữ liệu thực tế.
 
 ```text
                              ┌──────────────────────────────────────────────┐
@@ -45,81 +45,56 @@
                ┌────────────────────────────────────┼────────────────────────────────────┐
                ▼                                    ▼                                    ▼
    ┌────────────────────────┐         ┌────────────────────────┐         ┌────────────────────────┐
-   │   CLIENT: REPORTER     │         │   CLIENT: DISPATCHER   │         │     CLIENT: ADMIN      │
+   │    CLIENT: REPORTER    │         │   CLIENT: DISPATCHER   │         │     CLIENT: ADMIN      │
    │ (Học sinh / Giáo viên) │         │   (Kỹ thuật / Y tế)    │         │   (Ban Giám Hiệu)      │
    │                        │         │                        │         │                        │
-   │ - Gửi báo cáo sự cố    │ Socket  │ - Nhận việc theo khoa  │ Socket  │ - Thống kê KPI, Top    │
+   │ - Tạo & Gửi sự cố mới  │ Socket  │ - Nhận ca theo khoa    │ Socket  │ - Thống kê KPI, Top    │
    │ - Xem lịch sử cá nhân  │◄───────►│ - Khóa ca nguyên tử    │◄───────►│ - Lọc động & Phân trang│
    │ - Nhận thông báo live  │  Rooms  │ - Nghiệm thu hoàn thành│  Rooms  │ - Giám sát toàn trường │
    └────────────────────────┘         └────────────────────────┘         └────────────────────────┘
 ```
 
-### Công nghệ sử dụng (Tech Stack)
+### Công nghệ sử dụng
 | Thành phần | Công nghệ / Thư viện | Vai trò kỹ thuật |
 | :--- | :--- | :--- |
-| **Runtime** | Node.js (v20+ / ES Modules) | Nền tảng thực thi JavaScript phi đồng bộ (Non-blocking I/O) |
-| **Web Framework**| Express.js v5.x | Xây dựng RESTful API, tự động bắt Promise Rejections trong Middleware |
-| **Database** | MongoDB & Mongoose ODM | Lưu trữ tài liệu BSON, Aggregation Pipeline, Atomic Operations |
-| **Real-time** | Socket.io v4.x | Giao tiếp WebSocket hai chiều phân kênh theo Rooms chuyên biệt |
-| **Bảo mật** | JWT (JSON Web Token) & Bcrypt | Xác thực phi trạng thái (Stateless), băm mật khẩu 10 salt rounds |
-| **Kiểm thử API**| Postman Collection v2.1 | 11 Endpoints + Script tự động trích xuất Token + Negative Tests |
+| **Runtime** | Node.js (v20+ / ES Modules) | Môi trường thực thi phi đồng bộ |
+| **Framework** | Express.js v5.x | Xây dựng RESTful API và Middleware Pipeline |
+| **Database** | MongoDB & Mongoose ODM | Lưu trữ tài liệu BSON, Aggregation Pipeline |
+| **Real-time** | Socket.io v4.x | Giao tiếp hai chiều WebSocket dựa trên Room |
+| **Bảo mật** | JWT (JSON Web Token) & Bcrypt | Cấp token phi trạng thái, băm mật khẩu 10 salt rounds |
+| **Kiểm thử API**| Postman Collection v2.1 | Danh mục request mẫu sẵn sàng import để kiểm thử |
 
 ---
 
-## 2. ĐẶC ĐIỂM KỸ THUẬT NỔI BẬT (KEY ENGINEERING HIGHLIGHTS)
+## 2. ĐẶC ĐIỂM KỸ THUẬT NỔI BẬT
 
-### 1. Khóa nguyên tử chống Race Condition (Atomic Concurrency Control)
-- **Vấn đề thực tế:** Khi 2 hoặc nhiều kỹ thuật viên cùng bấm nhận 1 sự cố tại cùng một thời điểm, nếu dùng cơ chế kiểm tra trước rồi mới lưu (`find` rồi `save`), hệ thống sẽ bị xung đột tranh chấp (Race Condition).
-- **Giải pháp:** Sử dụng thao tác nguyên tử ở tầng cơ sở dữ liệu MongoDB:
-  ```javascript
-  const updatedIncident = await Incident.findOneAndUpdate(
-    { _id: incidentId, status: "PENDING" },
-    { status: "IN_PROGRESS", responder: req.user.userId },
-    { new: true }
-  );
-  if (!updatedIncident) {
-    throw createHttpError("This incident has already been accepted by another responder.", 409);
-  }
-  ```
-  Thao tác này đảm bảo chỉ duy nhất 1 nhân viên nhận thành công (`200 OK`), người đến sau nhận ngay mã lỗi `409 Conflict`.
-
-### 2. Định tuyến sự kiện theo Room (Targeted Socket Routing)
-- Thay vì phát sóng tràn lan (`broadcast`), hệ thống phân chia các Socket Rooms riêng biệt:
-  - Sự cố Kỹ thuật $\rightarrow$ Chỉ gửi vào `department_TECHNICAL` và `room_admin`.
-  - Sự cố Y tế $\rightarrow$ Chỉ gửi vào `department_MEDICAL` và `room_admin`.
-  - Cập nhật trạng thái cá nhân $\rightarrow$ Gửi trực tiếp vào phòng riêng `user_${reporterId}`.
-- Giúp giảm tải băng thông và bảo đảm tính bảo mật dữ liệu giữa các bộ phận.
-
-### 3. Thống kê KPI bằng MongoDB Aggregation Pipeline
-- Thay vì nạp toàn bộ danh sách bản ghi về tầng ứng dụng Node.js để tính toán bằng JavaScript, hệ thống tận dụng engine của MongoDB để lọc (`$match`), gom nhóm (`$group`), tính tổng (`$sum`), sắp xếp (`$sort`), lấy top (`$limit`) và định hình lại cấu trúc trường (`$project`), thực thi song song thông qua `Promise.all`:
-  - Thống kê tỷ lệ ca theo trạng thái (Pending / In Progress / Resolved).
-  - Phân bổ số ca theo từng phòng ban (Technical / Medical).
-  - Top 3 vị trí điểm nóng thường xuyên xảy ra sự cố nhất trường.
-
-### 4. Xử lý lỗi tập trung chuẩn Production (Centralized Error Handler)
-- Bắt và chuẩn hóa toàn bộ lỗi hệ thống về một định dạng thống nhất `{ success: false, message: "..." }`.
-- Phân loại chính xác các mã lỗi HTTP:
-  - `CastError` (ID sai định dạng 24 hex ObjectId) $\rightarrow$ `400 Bad Request`.
-  - `ValidationError` (Thiếu trường bắt buộc, sai Enum) $\rightarrow$ `400 Bad Request`.
-  - Duplicate Key (`E11000`) $\rightarrow$ `409 Conflict`.
-  - Sai cú pháp JSON body $\rightarrow$ `400 Bad Request`.
+1. **Khóa nguyên tử chống Race Condition (Atomic Concurrency Control):**
+   - Tránh xung đột khi nhiều nhân viên cùng bấm nhận một sự cố tại cùng một thời điểm bằng thao tác nguyên tử MongoDB: `findOneAndUpdate({ _id, status: 'PENDING' }, { status: 'IN_PROGRESS', responder: userId })`. Nếu ca đã được tiếp nhận trước đó, hệ thống trả về mã `409 Conflict`.
+2. **Định tuyến thông báo theo Room (Targeted Socket Routing):**
+   - Phân chia kênh phát sóng qua Socket.io: Sự cố kỹ thuật gửi vào `department_TECHNICAL`, sự cố y tế gửi vào `department_MEDICAL`, sự kiện hệ thống gửi vào `room_admin`, và thông báo trạng thái riêng gửi về `user_${reporterId}`.
+3. **Thống kê số liệu bằng MongoDB Aggregation Pipeline:**
+   - Sử dụng các giai đoạn `$match`, `$group`, `$sort`, `$limit` và `$project` thực thi trực tiếp trên database engine thông qua `Promise.all` song song, giảm tải việc nạp dữ liệu thô về Node.js.
+4. **Phân trang và lọc động (Pagination & Dynamic Filtering):**
+   - Áp dụng phân trang theo offset `.skip(skip).limit(limitNumber)` kết hợp `countDocuments` để đếm tổng số bản ghi và tính toán `totalPages`, giúp giảm tải dung lượng phản hồi cho Client.
+5. **Xử lý lỗi tập trung chuẩn Production (Centralized Error Handler):**
+   - Chuẩn hóa toàn bộ phản hồi lỗi về `{ success: false, message }`, tự động phân loại `CastError` (400), `ValidationError` (400), trùng lặp dữ liệu `E11000` (409) và lỗi cú pháp JSON.
 
 ---
 
 ## 3. PHÂN HỆ NGƯỜI DÙNG & MA TRẬN PHÂN QUYỀN (RBAC)
 
-| Vai trò (Role) | Phòng ban (Department) | Quyền hạn chính | Quy tắc kiểm soát truy cập |
+| Vai trò (Role) | Phòng ban (Department) | Quyền hạn chính | Quy định truy cập |
 | :--- | :--- | :--- | :---: |
-| `student` / `teacher` | `GENERAL` | Báo cáo sự cố mới, Xem lịch sử báo cáo của chính mình | Chỉ truy cập route Reporter |
+| `student` / `teacher` | `GENERAL` | Báo cáo sự cố, Xem danh sách sự cố của chính mình | Chỉ truy cập route Reporter |
 | `dispatcher` | `TECHNICAL` | Xem sự cố chờ (`/pending`), Nhận & Hoàn thành sự cố **Kỹ thuật** | Bị chặn `403` nếu thao tác ca Y tế |
 | `dispatcher` | `MEDICAL` | Xem sự cố chờ (`/pending`), Nhận & Hoàn thành sự cố **Y tế** | Bị chặn `403` nếu thao tác ca Kỹ thuật |
 | `admin` | — | Xem toàn bộ sự cố toàn trường, Xem Thống kê Analytics | Toàn quyền kiểm tra và giám sát |
 
-> **Bảo mật quản trị tài khoản:** Trong môi trường thực tế, route công khai `/register` chỉ phục vụ tài khoản học sinh thông thường. Các tài khoản có quyền hạn cao (`dispatcher`, `admin`) được khởi tạo trước thông qua kịch bản Seed dữ liệu (`npm run seed`) nhằm đảm bảo an ninh hệ thống.
+> **Lưu ý về quản trị tài khoản:** Trong môi trường thực tế, route công khai `/register` chỉ phục vụ tài khoản học sinh / giáo viên thông thường. Các tài khoản có quyền hạn đặc biệt (`dispatcher`, `admin`) được khởi tạo trước thông qua kịch bản Seed dữ liệu (`npm run seed`) nhằm đảm bảo tính bảo mật.
 
 ---
 
-## 4. VÒNG ĐỜI SỰ CỐ & CƠ CHẾ KHÓA NGUYÊN TỬ CHỐNG RACE CONDITION
+## 4. VÒNG ĐỜI SỰ CỐ & CƠ CHẾ KIỂM SOÁT TRANH CHẤP (CONCURRENCY CONTROL)
 
 ```text
    Reporter tạo sự cố
@@ -136,10 +111,10 @@
    - user_${reporterId}                      - department_${dept}                    
 ```
 
-- **Chống nhận trùng việc (Race Condition):**
+- **Xung đột nhận việc (Race Condition):** Khi 2 kỹ thuật viên cùng bấm nhận 1 sự cố tại cùng một thời điểm:
   - Thao tác đầu tiên khớp điều kiện `status: "PENDING"` sẽ cập nhật thành công (HTTP `200 OK`).
-  - Thao tác thứ hai đến sau không còn tìm thấy trạng thái `"PENDING"`, lập tức trả về HTTP `409 Conflict`: *"This incident has already been accepted by another responder."*
-- **Kiểm tra quyền sở hữu khi hoàn thành (Ownership Check):** Chỉ đúng kỹ thuật viên được ghi nhận trong trường `responder` mới có quyền chuyển trạng thái sang `RESOLVED` (HTTP `403 Forbidden` nếu người khác cố tình can thiệp).
+  - Thao tác thứ hai không còn tìm thấy trạng thái `"PENDING"` tương ứng, trả về HTTP `409 Conflict` với thông báo: *"This incident has already been accepted by another responder."*
+- **Kiểm tra quyền hoàn thành (Ownership Check):** Chỉ đúng kỹ thuật viên được ghi nhận trong trường `responder` mới có quyền chuyển trạng thái sang `RESOLVED` (HTTP `403 Forbidden` nếu người khác cố tình thao tác).
 
 ---
 
@@ -158,7 +133,7 @@ Hệ thống sử dụng các Room cố định, đồng bộ chính xác giữa
 
 ---
 
-## 6. CẤU TRÚC THƯ MỤC CHUẨN MVC
+## 6. CẤU TRÚC THƯ MỤC MVC
 
 ```text
 SchoolIncidentDispatch/
@@ -172,10 +147,10 @@ SchoolIncidentDispatch/
 │   ├── authMiddleware.js      # Xác thực Bearer JWT Token + Phân quyền authorizeRoles
 │   └── errorHandler.js        # Bắt và định dạng lỗi tập trung (CastError, ValidationError)
 ├── models/
-│   ├── userModel.js           # User Schema (Bcrypt hash, select: false trên password)
+│   ├── userModel.js           # User Schema (Mã hóa bcrypt, phân quyền role & department)
 │   └── incidentModel.js       # Incident Schema (Mapping phòng ban, trạng thái Enum)
 ├── postman/
-│   └── SchoolIncidentDispatch.postman_collection.json # File Postman Collection v2.1 hoàn chỉnh
+│   └── SchoolIncidentDispatch.postman_collection.json # File Postman Collection v2.1 (11 endpoints)
 ├── routes/
 │   ├── userRoutes.js          # Router /api/users
 │   ├── incidentRoutes.js      # Router /api/incidents
@@ -183,19 +158,20 @@ SchoolIncidentDispatch/
 ├── sockets/
 │   └── incidentSocket.js      # Handshake auth token & phân bổ Socket Rooms
 ├── utils/
-│   └── createHttpError.js     # Helper khởi tạo lỗi HTTP gắn statusCode
-├── .env.example               # Mẫu biến môi trường an toàn để chia sẻ
-├── .gitignore                 # Loại trừ node_modules, .env và file rác
-├── package.json               # Cấu hình dự án, dependencies và scripts
-├── seed.js                    # Kịch bản dọn dẹp & nạp dữ liệu mẫu tự động
-└── server.js                  # Khởi chạy Express HTTP, CORS, Health-check & Socket.io
+│   └── createHttpError.js     # Helper khởi tạo lỗi HTTP có gắn statusCode
+├── .env.example               # Mẫu cấu hình biến môi trường
+├── .gitignore                 # Loại trừ node_modules và file .env
+├── package.json               # Khai báo dependencies và scripts
+├── seed.js                    # Kịch bản khởi tạo tài khoản và sự cố mẫu
+├── server.js                  # Điểm khởi chạy: Tích hợp Express HTTP và Socket.io
+└── README.md                  # Tài liệu hướng dẫn kỹ thuật
 ```
 
 ---
 
 ## 7. DANH SÁCH REST API ENDPOINTS (11 ENDPOINTS)
 
-Tất cả phản hồi thành công đều tuân thủ cấu trúc envelope chuẩn mực:
+Mọi phản hồi thành công đều tuân thủ cấu trúc chuẩn:
 ```json
 {
   "success": true,
@@ -229,37 +205,37 @@ Tất cả phản hồi thành công đều tuân thủ cấu trúc envelope chu
 
 ---
 
-## 8. HƯỚNG DẪN CÀI ĐẶT & CHẠY THỬ NHANH TRONG 60 GIÂY
+## 8. HƯỚNG DẪN CÀI ĐẶT & CHẠY THỬ NHANH
 
-### Bước 1: Clone mã nguồn về máy
+### Bước 1: Clone repository về máy
 ```bash
 git clone https://github.com/DaoDuyHai/project.git
 cd project
 ```
 
-### Bước 2: Cài đặt thư viện phụ thuộc
+### Bước 2: Cài đặt các thư viện phụ thuộc
 ```bash
 npm install
 ```
 
 ### Bước 3: Cấu hình biến môi trường
-Tạo file `.env` từ file mẫu `.env.example`:
+Tạo file `.env` từ `.env.example`:
 ```bash
 cp .env.example .env
 ```
-Mở file `.env` và kiểm tra các thông số (kết nối MongoDB cục bộ hoặc chuỗi MongoDB Atlas):
+Mở file `.env` và kiểm tra các thông số (kết nối MongoDB local hoặc MongoDB Atlas):
 ```env
 PORT=3000
 MONGO_URI=mongodb://localhost:27017/school_dispatch
-SECRET_KEY=your_super_secret_jwt_key_here
+SECRET_KEY=your_jwt_secret_key_here
 ```
 
-### Bước 4: Nạp dữ liệu mẫu tự động (Seeding)
-Chạy script seed để tự động làm sạch database và tạo sẵn 5 tài khoản mẫu + 5 sự cố mẫu:
+### Bước 4: Khởi tạo dữ liệu mẫu (Seeding)
+Chạy script seed để tự động dọn sạch database và nạp sẵn 5 tài khoản mẫu kèm 5 sự cố mẫu bao phủ mọi trạng thái:
 ```bash
 npm run seed
 ```
-*Danh sách tài khoản mẫu sẵn sàng sử dụng (Mật khẩu mặc định chung: `123`):*
+*Tài khoản mẫu được tạo tự động (Mật khẩu mặc định chung: `123`):*
 - **Admin:** `admin01` / mật khẩu: `123`
 - **Kỹ thuật viên:** `tech01` / mật khẩu: `123` (Khoa: `TECHNICAL`)
 - **Nhân viên Y tế:** `tech02` / mật khẩu: `123` (Khoa: `MEDICAL`)
@@ -268,76 +244,35 @@ npm run seed
 
 ### Bước 5: Khởi chạy Server
 ```bash
-# Chạy ở chế độ phát triển (Auto-reload khi lưu file)
+# Chạy ở chế độ phát triển (Tự động tải lại khi đổi code)
 npm run dev
 
-# Hoặc chạy ở chế độ chuẩn
+# Chạy ở chế độ thông thường
 npm start
 ```
-Server sẽ chạy tại: `http://localhost:3000` (Kiểm tra health-check tại `GET http://localhost:3000/`).
+Server sẽ chạy tại `http://localhost:3000` (Kiểm tra health-check tại `GET http://localhost:3000/`).
 
 ---
 
-## 9. BỘ KIỂM THỬ POSTMAN COLLECTION CHUYÊN NGHIỆP (AUTO-TOKEN)
+## 9. KIỂM THỬ QUA POSTMAN COLLECTION (AUTO-TOKEN)
 
-Dự án cung cấp sẵn file cấu hình Postman hoàn chỉnh chuẩn Schema v2.1 tại:  
+Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:  
 📁 [postman/SchoolIncidentDispatch.postman_collection.json](postman/SchoolIncidentDispatch.postman_collection.json)
 
-### Điểm đặc biệt vượt trội của Postman Collection này:
-1. **Cơ chế Auto-Token (Không cần copy-paste thủ công):**  
-   Mỗi request Login trong folder `1. Authentication` đều tích hợp sẵn Test Script:
-   ```javascript
-   const jsonData = pm.response.json();
-   const token = jsonData.token || (jsonData.data && jsonData.data.token);
-   if (token) {
-       pm.collectionVariables.set("token", token);
-   }
-   ```
-   👉 Bạn chỉ cần bấm **Send** vào tài khoản muốn kiểm thử, mã Token sẽ tự động cập nhật vào biến collection `{{token}}` cho toàn bộ 11 request con!
-2. **Tự động bắt `{{incidentId}}`:**  
-   Khi tạo sự cố hoặc khi Dispatcher xem danh sách việc chờ, script tự động lưu ID sự cố vào biến `{{incidentId}}`. Bạn có thể bấm ngay request `Accept` và `Resolve` nối tiếp mà không cần copy ID bằng tay.
-3. **Folder `5. RBAC Negative Tests` (Kiểm thử bảo mật):**  
-   Bao gồm các test case kiểm tra việc chặn quyền (Sinh viên gọi API Admin/Dispatcher) với assertion tự động kiểm tra mã `403 Forbidden`.
+1. Mở Postman $\rightarrow$ Chọn **Import** $\rightarrow$ Chọn file `.json` trên.
+2. Bộ sưu tập cấu hình sẵn **Authorization cấp Collection**, biến môi trường `{{baseUrl}}` và `{{token}}`.
+3. **Cơ chế Auto-Token thông minh:** Mỗi request Login trong folder `1. Authentication` đều tích hợp sẵn Test Script tự động bắt và lưu `token` vào biến collection. Bạn chỉ cần bấm **Send** vào tài khoản muốn kiểm thử, token sẽ tự động cập nhật cho toàn bộ API mà không cần sao chép thủ công.
+4. **Tự động lưu `{{incidentId}}`:** Khi tạo sự cố hoặc khi Dispatcher xem danh sách chờ, ID sự cố được tự động lưu để bạn bấm ngay request `Accept` và `Resolve` mà không cần copy ID bằng tay.
+5. **Folder `5. RBAC Negative Tests`:** Cung cấp sẵn các kịch bản kiểm thử bảo mật (Student cố tình gọi API Admin/Dispatcher) với assertion tự động xác thực mã lỗi `403 Forbidden`.
 
 ---
 
-## 10. BÁO CÁO KIỂM THỬ TỰ ĐỘNG (E2E TEST SUITE)
+## 10. LỘ TRÌNH MỞ RỘNG (FUTURE ROADMAP)
 
-Toàn bộ hệ thống đã được kiểm thử toàn diện End-to-End với **17/17 Test Cases đạt tuyệt đối (100% Passed)**:
-
-```text
-🚀 KẾT QUẢ KIỂM THỬ TOÀN DIỆN E2E (Tech Lead Review):
-  ✅ [PASS] GET / Health-check returns 200 OK
-  ✅ [PASS] GET /api/unknown-endpoint returns 404 Route Not Found
-  ✅ [PASS] POST /api/users/login (student01) returns token
-  ✅ [PASS] POST /api/users/login (tech01) returns token
-  ✅ [PASS] POST /api/users/login (admin01) returns token
-  ✅ [PASS] GET /api/users/profile returns valid user data
-  ✅ [PASS] POST /api/incidents creates incident (201 Created)
-  ✅ [PASS] GET /api/incidents/my-reports returns list
-  ✅ [PASS] GET /api/incidents/pending contains newly created incident
-  ✅ [PASS] PATCH /api/incidents/:id/accept transitions status to IN_PROGRESS
-  ✅ [PASS] PATCH /api/incidents/:id/accept duplicate attempt returns 409 Conflict
-  ✅ [PASS] PATCH /api/incidents/:id/resolve transitions status to RESOLVED
-  ✅ [PASS] GET /api/incidents (Admin) returns paginated list
-  ✅ [PASS] GET /api/incidents/analytics returns aggregation KPI metrics
-  ✅ [PASS] RBAC Security: Student calling Admin Analytics is blocked (403 Forbidden)
-  ✅ [PASS] RBAC Security: Student calling Accept Incident is blocked (403 Forbidden)
-  ✅ [PASS] Error Handler: Malformed ObjectId parameter returns 400 Bad Request
-
-=======================================================
-🏁 TỔNG KẾT: 17/17 TEST CASES PASSED (100% SUCCESS)
-=======================================================
-```
-
----
-
-## 11. LỘ TRÌNH MỞ RỘNG (FUTURE ROADMAP)
-
-- [ ] **In-app Real-time Chat:** Mở rộng Socket.io Room `incident_${id}` để người báo cáo và nhân viên phụ trách có thể trao đổi trực tiếp trong quá trình xử lý sự cố.
-- [ ] **Đính kèm hình ảnh hiện trường (Media Upload):** Tích hợp Cloudinary hoặc AWS S3 để người báo cáo tải ảnh chụp hư hại.
-- [ ] **Bổ sung phòng ban:** Thêm khoa `SECURITY` (Bảo vệ / An ninh trật tự học đường).
-- [ ] **Xuất báo cáo định kỳ:** Hỗ trợ Admin xuất dữ liệu sự cố và số liệu thống kê ra file Excel / CSV.
+- [ ] **In-app Real-time Chat:** Mở rộng Socket.io Room `incident_${id}` để người báo cáo và nhân viên phụ trách có thể trao đổi trực tiếp khi đang xử lý sự cố.
+- [ ] **Đính kèm hình ảnh (Media Upload):** Tích hợp Cloudinary hoặc AWS S3 để người báo có thể gửi ảnh chụp hiện trường hư hại.
+- [ ] **Mở rộng phòng ban:** Bổ sung thêm khoa `SECURITY` (Bảo vệ / An ninh trật tự).
+- [ ] **Xuất báo cáo:** Hỗ trợ Admin xuất dữ liệu sự cố và thống kê định dạng Excel / CSV.
 
 ---
 
@@ -345,45 +280,3 @@ Toàn bộ hệ thống đã được kiểm thử toàn diện End-to-End với
 - **Đào Duy Hải**
 - GitHub: [@DaoDuyHai](https://github.com/DaoDuyHai)
 - Repository: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
-
-```text
-🚀 KẾT QUẢ KIỂM THỬ TOÀN DIỆN E2E (Tech Lead Review):
-  ✅ [PASS] GET / Health-check returns 200 OK
-  ✅ [PASS] GET /api/unknown-endpoint returns 404 Route Not Found
-  ✅ [PASS] POST /api/users/login (student01) returns token
-  ✅ [PASS] POST /api/users/login (tech01) returns token
-  ✅ [PASS] POST /api/users/login (admin01) returns token
-  ✅ [PASS] GET /api/users/profile returns valid user data
-  ✅ [PASS] POST /api/incidents creates incident (201 Created)
-  ✅ [PASS] GET /api/incidents/my-reports returns list
-  ✅ [PASS] GET /api/incidents/pending contains newly created incident
-  ✅ [PASS] PATCH /api/incidents/:id/accept transitions status to IN_PROGRESS
-  ✅ [PASS] PATCH /api/incidents/:id/accept duplicate attempt returns 409 Conflict
-  ✅ [PASS] PATCH /api/incidents/:id/resolve transitions status to RESOLVED
-  ✅ [PASS] GET /api/incidents (Admin) returns paginated list
-  ✅ [PASS] GET /api/incidents/analytics returns aggregation KPI metrics
-  ✅ [PASS] RBAC Security: Student calling Admin Analytics is blocked (403 Forbidden)
-  ✅ [PASS] RBAC Security: Student calling Accept Incident is blocked (403 Forbidden)
-  ✅ [PASS] Error Handler: Malformed ObjectId parameter returns 400 Bad Request
-
-=======================================================
-🏁 TỔNG KẾT: 17/17 TEST CASES PASSED (100% SUCCESS)
-=======================================================
-```
-
----
-
-## 11. LỘ TRÌNH MỞ RỘNG (FUTURE ROADMAP)
-
-- [ ] **In-app Real-time Chat:** Mở rộng Socket.io Room `incident_${id}` để người báo cáo và nhân viên phụ trách có thể trao đổi trực tiếp trong quá trình xử lý sự cố.
-- [ ] **Đính kèm hình ảnh hiện trường (Media Upload):** Tích hợp Cloudinary hoặc AWS S3 để người báo cáo tải ảnh chụp hư hại.
-- [ ] **Bổ sung phòng ban:** Thêm khoa `SECURITY` (Bảo vệ / An ninh trật tự học đường).
-- [ ] **Xuất báo cáo định kỳ:** Hỗ trợ Admin xuất dữ liệu sự cố và số liệu thống kê ra file Excel / CSV.
-
----
-
-### 👨‍💻 Tác giả
-- **Đào Duy Hải**
-- GitHub: [@DaoDuyHai](https://github.com/DaoDuyHai)
-- Repository: [https://github.com/DaoDuyHai/project](https://github.com/DaoDuyHai/project)
-
