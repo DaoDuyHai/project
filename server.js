@@ -1,6 +1,6 @@
 import express from "express";
-import "dotenv/config";
 import http from "http";
+import { env } from "./config/env.js";
 import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -73,7 +73,7 @@ app.use((req, res) => {
 // 6. Middleware xử lý lỗi tập trung
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = env.PORT || 3000;
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
