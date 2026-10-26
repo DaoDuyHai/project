@@ -73,8 +73,6 @@ app.use((req, res) => {
 // 6. Middleware xử lý lỗi tập trung
 app.use(errorHandler);
 
-const a = 10;
-
 const PORT = env.PORT || 3000;
 httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
