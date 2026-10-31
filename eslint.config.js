@@ -13,6 +13,8 @@ export default [
         module: 'readonly',
         require: 'readonly',
         exports: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
 
         describe: 'readonly',
         it: 'readonly',
@@ -20,6 +22,8 @@ export default [
         expect: 'readonly',
         beforeEach: 'readonly',
         afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
       },
     },
     rules: {

@@ -84,7 +84,7 @@ export const acceptIncidentService = async (incidentId, user) => {
       responder: user.userId,
     },
     {
-      new: true,
+      returnDocument: 'after',
     }
   );
 
@@ -152,7 +152,7 @@ export const resolveIncidentService = async (
       resolvedAt: new Date(),
     },
     {
-      new: true,
+      returnDocument: 'after',
     }
   );
 

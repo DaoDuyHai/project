@@ -74,6 +74,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = env.PORT || 3000;
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
+
+export { app, httpServer };
+export default app;

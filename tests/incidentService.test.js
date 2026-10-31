@@ -108,7 +108,7 @@ describe('IncidentService - Unit Tests (Mocked Model / No Database Connection)',
       expect(Incident.findOneAndUpdate).toHaveBeenCalledWith(
         { _id: 'incident_123', status: 'PENDING' },
         { status: 'IN_PROGRESS', responder: 'user_tech_1' },
-        { new: true }
+        { returnDocument: 'after' }
       );
     });
   });

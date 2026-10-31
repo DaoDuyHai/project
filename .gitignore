@@ -26,6 +26,7 @@ pids
 *.pid
 *.seed
 *.pid.lock
+coverage/
 
 # --- Editor & IDE Settings ---
 # Cấu hình riêng của môi trường lập trình cá nhân
