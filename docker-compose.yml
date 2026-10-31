@@ -1,0 +1,61 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Ứng dụng Backend API & WebSocket (Node.js Express)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: school-incident-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/school_dispatch
+      - SECRET_KEY=production_jwt_secret_key_school_incident_dispatch_2026_super_secure
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - school-network
+
+  # ----------------------------------------------------------------------------
+  # 2. Cơ sở dữ liệu MongoDB 6.0
+  # ----------------------------------------------------------------------------
+  mongodb:
+    image: mongo:6.0
+    container_name: school-incident-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - school-network
+
+# ------------------------------------------------------------------------------
+# Volumes & Networks
+# ------------------------------------------------------------------------------
+volumes:
+  mongo_data:
+    name: school_incident_mongo_data
+
+networks:
+  school-network:
+    name: school_incident_network
+    driver: bridge
+

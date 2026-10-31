@@ -6,7 +6,8 @@
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-v4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-31%20Tests%20Passing-22c55e?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Multi--stage_Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Vitest](https://img.shields.io/badge/Vitest-34%20Tests%20Passing-22c55e?logo=vitest&logoColor=white)](https://vitest.dev/)
 [![ESLint](https://img.shields.io/badge/ESLint-Clean-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
 [![Security](https://img.shields.io/badge/Auth-JWT_RBAC-FF6F00?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
 [![Postman](https://img.shields.io/badge/Postman-Collection_v2.1-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/)
@@ -66,6 +67,8 @@
 | **Database** | MongoDB & Mongoose ODM | Lưu trữ tài liệu BSON, Aggregation Pipeline |
 | **Real-time** | Socket.io v4.x | Giao tiếp hai chiều WebSocket dựa trên Room |
 | **Bảo mật** | JWT (JSON Web Token) & Bcrypt | Cấp token phi trạng thái, băm mật khẩu 10 salt rounds |
+| **Containerization** | Docker & Docker Compose | Multi-stage build (Alpine), chạy non-root `node:node`, kiểm tra sức khỏe tự động |
+| **Kiểm thử tự động**| Vitest, Supertest, V8 Coverage | Bộ 34 test cases (Unit, Service Mock, Integration, Concurrency, Socket Rooms) |
 | **Kiểm thử API**| Postman Collection v2.1 | Danh mục request mẫu sẵn sàng import để kiểm thử |
 
 ---
@@ -211,18 +214,38 @@ Mọi phản hồi thành công đều tuân thủ cấu trúc chuẩn:
 
 ## 8. HƯỚNG DẪN CÀI ĐẶT & CHẠY THỬ NHANH
 
-### Bước 1: Clone repository về máy
+### Cách 1: Khởi chạy siêu tốc bằng Docker Compose (Khuyến nghị 🚀)
+Hệ thống hỗ trợ đóng gói container đa tầng (**Multi-stage Dockerfile**, chạy dưới quyền non-root `node:node`, kiểm tra sức khỏe tự động qua `/health`). Chỉ cần duy nhất 1 câu lệnh để dựng toàn bộ Backend và cơ sở dữ liệu MongoDB:
+
+```bash
+# 1. Dựng và khởi chạy App + MongoDB 6.0 dưới dạng background containers
+docker-compose up -d --build
+
+# 2. Khởi tạo dữ liệu mẫu (Seeding vào MongoDB container)
+docker-compose run --rm app node seed.js
+
+# 3. Kiểm tra trạng thái sức khỏe của các container
+docker-compose ps
+curl http://localhost:3000/health
+```
+> Khi muốn dừng hệ thống: `docker-compose down` (Dữ liệu database được lưu bền vững tại named volume `mongo_data`).
+
+---
+
+### Cách 2: Khởi chạy trực tiếp trên máy Host (Local Node.js)
+
+#### Bước 1: Clone repository về máy
 ```bash
 git clone https://github.com/DaoDuyHai/school-incident-dispatch.git
 cd school-incident-dispatch
 ```
 
-### Bước 2: Cài đặt các thư viện phụ thuộc
+#### Bước 2: Cài đặt các thư viện phụ thuộc
 ```bash
 npm install
 ```
 
-### Bước 3: Cấu hình biến môi trường
+#### Bước 3: Cấu hình biến môi trường
 Tạo file `.env` từ `.env.example`:
 ```bash
 cp .env.example .env
@@ -234,7 +257,7 @@ MONGO_URI=mongodb://localhost:27017/school_dispatch
 SECRET_KEY=your_jwt_secret_key_here
 ```
 
-### Bước 4: Khởi tạo dữ liệu mẫu (Seeding)
+#### Bước 4: Khởi tạo dữ liệu mẫu (Seeding)
 Chạy script seed để tự động dọn sạch database và nạp sẵn 5 tài khoản mẫu kèm 5 sự cố mẫu bao phủ mọi trạng thái:
 ```bash
 npm run seed
@@ -246,7 +269,7 @@ npm run seed
 - **Sinh viên 1:** `student01` / mật khẩu: `123`
 - **Sinh viên 2:** `student02` / mật khẩu: `123`
 
-### Bước 5: Khởi chạy Server
+#### Bước 5: Khởi chạy Server
 ```bash
 # Chạy ở chế độ phát triển (Tự động tải lại khi đổi code)
 npm run dev
@@ -254,17 +277,18 @@ npm run dev
 # Chạy ở chế độ thông thường
 npm start
 ```
-Server sẽ chạy tại `http://localhost:3000` (Kiểm tra health-check tại `GET http://localhost:3000/`).
+Server sẽ chạy tại `http://localhost:3000` (Kiểm tra health-check tại `GET http://localhost:3000/health`).
 
 ---
 
 ## 9. KIỂM THỬ TỰ ĐỘNG & CI/CD PIPELINE (VITEST + GITHUB ACTIONS)
 
-Dự án áp dụng bộ kiểm thử tự động toàn diện với **31/31 Test Cases** bao phủ từ Unit test logic thuần, Mock Service Layer, Integration test quy trình hoàn chỉnh, Stress test Race Condition đến Socket.io Room Isolation:
+Dự án áp dụng bộ kiểm thử tự động toàn diện với **34/34 Test Cases** bao phủ từ Health Check, Unit test logic thuần, Mock Service Layer, Integration test quy trình hoàn chỉnh, Stress test Race Condition đến Socket.io Room Isolation:
 
-### 🧪 Danh mục Test Suites (31 Test Cases)
+### 🧪 Danh mục Test Suites (34 Test Cases)
 | Suite | Phân loại | Kỹ thuật / Phạm vi kiểm thử | Số tests | Thời gian |
 | :--- | :--- | :--- | :---: | :---: |
+| [`healthCheck.test.js`](tests/healthCheck.test.js) | **System Diagnostics** | Kiểm tra `/health` (Readiness Probe 200/503), đo lường Uptime và Memory usage | 3 tests | ~35ms |
 | [`createHttpError.test.js`](tests/createHttpError.test.js) | **Unit Test** | Pure function edge-cases, validation, status coercion, throw/catch error handling | 10 tests | ~17ms |
 | [`incidentService.test.js`](tests/incidentService.test.js) | **Service Unit Test** | Mocking toàn bộ tầng DB Mongoose (`vi.mock`), kiểm thử nghiệp vụ độc lập không cần DB | 10 tests | ~15ms |
 | [`incidentIntegration.test.js`](tests/incidentIntegration.test.js) | **Integration Test** | Supertest + MongoDB: Luồng nghiệp vụ chuẩn (Login $\rightarrow$ Report $\rightarrow$ Accept $\rightarrow$ Resolve) | 7 tests | ~2.5s |
@@ -273,7 +297,7 @@ Dự án áp dụng bộ kiểm thử tự động toàn diện với **31/31 Te
 
 ### 🚀 Lệnh thực thi kiểm thử
 ```bash
-# Chạy toàn bộ 31 test
+# Chạy toàn bộ 34 test
 npm test
 
 # Chạy test và xuất báo cáo độ phủ mã nguồn (Code Coverage bằng V8 engine)
@@ -289,7 +313,7 @@ Mỗi khi có commit được `push` hoặc tạo `pull_request` vào nhánh `ma
 2. **Khởi tạo môi trường Node.js:** Cài đặt Node.js 20.x và tối ưu hóa thời gian build với bộ đệm phụ thuộc (`cache: 'npm'`).
 3. **Cài đặt dependencies:** Chạy `npm ci` đảm bảo tính toàn vẹn phiên bản package.
 4. **Kiểm tra chuẩn mã nguồn:** Tự động quét lỗi cú pháp và biến không dùng bằng `npm run lint`.
-5. **Chạy toàn bộ Test Suites:** Tự động thực thi `npm run test:coverage` (31 tests pass) và tính toán độ phủ code.
+5. **Chạy toàn bộ Test Suites:** Tự động thực thi `npm run test:coverage` (34 tests pass) và tính toán độ phủ code.
 6. **Cập nhật Badge tự động:** Huy hiệu CI Status trên đầu README tự động chuyển sang màu xanh lá (`passing`).
 
 ---
