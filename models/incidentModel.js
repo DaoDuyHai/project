@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const incidentSchema = new mongoose.Schema(
   {
@@ -14,12 +14,12 @@ const incidentSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["Hỏng điện/Nước/Thiết bị", "Tai nạn/Sức khỏe/Cấp cứu"],
+      enum: ['Hỏng điện/Nước/Thiết bị', 'Tai nạn/Sức khỏe/Cấp cứu'],
       required: true,
     },
     department: {
       type: String,
-      enum: ["TECHNICAL", "MEDICAL"],
+      enum: ['TECHNICAL', 'MEDICAL'],
       required: true,
     },
     description: {
@@ -28,17 +28,17 @@ const incidentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["PENDING", "IN_PROGRESS", "RESOLVED"],
-      default: "PENDING",
+      enum: ['PENDING', 'IN_PROGRESS', 'RESOLVED'],
+      default: 'PENDING',
     },
     reporter: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     responder: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       default: null,
     },
     resolutionNotes: {
@@ -53,6 +53,15 @@ const incidentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Incident = mongoose.model("Incident", incidentSchema);
+// 1. Compound Index: Tối ưu truy vấn Dispatcher xem sự cố theo khoa và Admin lọc trạng thái
+incidentSchema.index({ status: 1, department: 1, createdAt: -1 });
+
+// 2. Index: Tối ưu truy vấn Reporter xem lịch sử sự cố cá nhân
+incidentSchema.index({ reporter: 1, createdAt: -1 });
+
+// 3. Index: Tối ưu truy vấn lọc trạng thái tổng quát
+incidentSchema.index({ status: 1, createdAt: -1 });
+
+const Incident = mongoose.model('Incident', incidentSchema);
 
 export default Incident;

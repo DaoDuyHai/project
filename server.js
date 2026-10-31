@@ -11,6 +11,8 @@ import { initIncidentSocket } from './sockets/incidentSocket.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { requestLogger } from './middlewares/requestLogger.js';
 import { logger } from './config/logger.js';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './config/swaggerSpec.js';
 
 const app = express();
 
@@ -78,14 +80,31 @@ app.get('/health', (req, res) => {
   return res.status(200).json(healthData);
 });
 
-// 3. Root Route
+// 3. Swagger OpenAPI Documentation UI (/docs)
+app.use(
+  '/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: 'School Incident Dispatch API Docs 📄',
+    customCss: '.swagger-ui .topbar { display: none }',
+  })
+);
+
+app.get('/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).send(swaggerDocument);
+});
+
+// 4. Root Route
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'School Incident Dispatch System API is running live 🚀',
     version: '1.0.0',
-    docs: 'Import postman/SchoolIncidentDispatch.postman_collection.json to test all 11 endpoints.',
+    documentation: '/docs',
+    openApiJson: '/docs.json',
     health: '/health',
+    docs: 'Import postman/SchoolIncidentDispatch.postman_collection.json or visit /docs.',
   });
 });
 
