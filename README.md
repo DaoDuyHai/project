@@ -318,6 +318,7 @@ Mỗi khi có commit được `push` hoặc tạo `pull_request` vào nhánh `ma
 4. **Kiểm tra chuẩn mã nguồn:** Tự động quét lỗi cú pháp và biến không dùng bằng `npm run lint`.
 5. **Chạy toàn bộ Test Suites:** Tự động thực thi `npm run test:coverage` (34 tests pass) và tính toán độ phủ code.
 6. **Cập nhật Badge tự động:** Huy hiệu CI Status trên đầu README tự động chuyển sang màu xanh lá (`passing`).
+7. **Tự động Triển khai lên Production (Continuous Deployment):** Nếu toàn bộ test vượt qua thành công, GitHub Actions tự động kết nối qua `FLY_API_TOKEN`, đóng gói Dockerfile và triển khai phiên bản mới nhất lên Fly.io (`https://school-incident-dispatch.fly.dev`) với cơ chế Zero-downtime rolling update. Nếu có bất kỳ test nào thất bại, quy trình deploy lập tức bị hủy bỏ để bảo vệ server production.
 
 ---
 
