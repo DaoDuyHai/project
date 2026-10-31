@@ -54,3 +54,7 @@ Desktop.ini
 .postman/
 postman/*/
 !postman/SchoolIncidentDispatch.postman_collection.json
+
+# --- Personal Learning Roadmap (Do not commit) ---
+roadmap.md
+
