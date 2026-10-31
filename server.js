@@ -9,13 +9,18 @@ import incidentRoutes from './routes/incidentRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import { initIncidentSocket } from './sockets/incidentSocket.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { requestLogger } from './middlewares/requestLogger.js';
+import { logger } from './config/logger.js';
 
 const app = express();
 
 // Kết nối cơ sở dữ liệu MongoDB
 connectDB();
 
-// 1. Cấu hình CORS cho Express REST API
+// 1. Gắn Structured Logging & Request ID (Correlation ID) cho mọi request
+app.use(requestLogger);
+
+// 2. Cấu hình CORS cho Express REST API
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header(
@@ -105,9 +110,11 @@ app.use('/api', adminRoutes);
 
 // 6. Bắt các route không tồn tại (404 Handler)
 app.use((req, res) => {
+  const requestId = req.id || req.requestId;
   res.status(404).json({
     success: false,
     message: `Route not found: ${req.method} ${req.originalUrl}`,
+    ...(requestId ? { requestId } : {}),
   });
 });
 
@@ -174,7 +181,7 @@ if (process.env.NODE_ENV !== 'test') {
 const PORT = env.PORT || 3000;
 if (process.env.NODE_ENV !== 'test') {
   httpServer.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    logger.info(`🚀 Server is running on port ${PORT}`);
   });
 }
 

@@ -29,12 +29,24 @@ export const errorHandler = (error, req, res, _next) => {
     message = 'Malformed JSON payload in request body.';
   }
 
+  const requestId = req.id || req.requestId;
+
   if (statusCode >= 500) {
-    console.error('🔥 [Internal Server Error]:', error);
+    if (req.log) {
+      req.log.error(
+        { err: error, requestId, statusCode },
+        '🔥 Internal Server Error'
+      );
+    } else {
+      console.error('🔥 [Internal Server Error]:', error);
+    }
+  } else if (req.log) {
+    req.log.warn({ statusCode, message, requestId }, '⚠️ Client Handled Error');
   }
 
   return res.status(statusCode).json({
     success: false,
     message,
+    ...(requestId ? { requestId } : {}),
   });
 };

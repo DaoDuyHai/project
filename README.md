@@ -8,7 +8,8 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-v4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Docker](https://img.shields.io/badge/Docker-Multi--stage_Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![Vitest](https://img.shields.io/badge/Vitest-34%20Tests%20Passing-22c55e?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Vitest-38%20Tests%20Passing-22c55e?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Logging](https://img.shields.io/badge/Logging-Pino_Structured-005B99?logo=pino&logoColor=white)](https://getpino.io/)
 [![ESLint](https://img.shields.io/badge/ESLint-Clean-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
 [![Security](https://img.shields.io/badge/Auth-JWT_RBAC-FF6F00?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
 [![Postman](https://img.shields.io/badge/Postman-Collection_v2.1-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/)
@@ -71,7 +72,8 @@
 | **Real-time** | Socket.io v4.x | Giao tiếp hai chiều WebSocket dựa trên Room |
 | **Bảo mật** | JWT (JSON Web Token) & Bcrypt | Cấp token phi trạng thái, băm mật khẩu 10 salt rounds |
 | **Containerization** | Docker & Docker Compose | Multi-stage build (Alpine), chạy non-root `node:node`, kiểm tra sức khỏe tự động |
-| **Kiểm thử tự động**| Vitest, Supertest, V8 Coverage | Bộ 34 test cases (Unit, Service Mock, Integration, Concurrency, Socket Rooms) |
+| **Logging & Tracing** | Pino & Pino-HTTP | Structured JSON Logging, gắn `requestId` (Correlation ID) xuyên suốt vòng đời request |
+| **Kiểm thử tự động**| Vitest, Supertest, V8 Coverage | Bộ 38 test cases (Unit, Service Mock, Integration, Concurrency, Socket Rooms, Tracing) |
 | **Kiểm thử API**| Postman Collection v2.1 | Danh mục request mẫu sẵn sàng import để kiểm thử |
 
 ---
@@ -286,11 +288,12 @@ Server sẽ chạy tại `http://localhost:3000` (Kiểm tra health-check tại 
 
 ## 9. KIỂM THỬ TỰ ĐỘNG & CI/CD PIPELINE (VITEST + GITHUB ACTIONS)
 
-Dự án áp dụng bộ kiểm thử tự động toàn diện với **34/34 Test Cases** bao phủ từ Health Check, Unit test logic thuần, Mock Service Layer, Integration test quy trình hoàn chỉnh, Stress test Race Condition đến Socket.io Room Isolation:
+Dự án áp dụng bộ kiểm thử tự động toàn diện với **38/38 Test Cases** bao phủ từ Health Check, Structured Logging & Request ID Tracing, Unit test logic thuần, Mock Service Layer, Integration test quy trình hoàn chỉnh, Stress test Race Condition đến Socket.io Room Isolation:
 
-### 🧪 Danh mục Test Suites (34 Test Cases)
+### 🧪 Danh mục Test Suites (38 Test Cases)
 | Suite | Phân loại | Kỹ thuật / Phạm vi kiểm thử | Số tests | Thời gian |
 | :--- | :--- | :--- | :---: | :---: |
+| [`loggingAndTracing.test.js`](tests/loggingAndTracing.test.js) | **Observability Test** | Định danh `X-Request-Id` (UUID v4), giữ nguyên Client Correlation ID, gắn ID vào phản hồi lỗi | 4 tests | ~40ms |
 | [`healthCheck.test.js`](tests/healthCheck.test.js) | **System Diagnostics** | Kiểm tra `/health` (Readiness Probe 200/503), đo lường Uptime và Memory usage | 3 tests | ~35ms |
 | [`createHttpError.test.js`](tests/createHttpError.test.js) | **Unit Test** | Pure function edge-cases, validation, status coercion, throw/catch error handling | 10 tests | ~17ms |
 | [`incidentService.test.js`](tests/incidentService.test.js) | **Service Unit Test** | Mocking toàn bộ tầng DB Mongoose (`vi.mock`), kiểm thử nghiệp vụ độc lập không cần DB | 10 tests | ~15ms |
@@ -300,7 +303,7 @@ Dự án áp dụng bộ kiểm thử tự động toàn diện với **34/34 Te
 
 ### 🚀 Lệnh thực thi kiểm thử
 ```bash
-# Chạy toàn bộ 34 test
+# Chạy toàn bộ 38 test
 npm test
 
 # Chạy test và xuất báo cáo độ phủ mã nguồn (Code Coverage bằng V8 engine)
