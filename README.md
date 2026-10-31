@@ -1,10 +1,13 @@
 # 🏫 HỆ THỐNG ĐIỀU PHỐI & XỬ LÝ SỰ CỐ HỌC ĐƯỜNG
 ## (SCHOOL INCIDENT DISPATCH SYSTEM)
 
+[![CI Pipeline](https://github.com/DaoDuyHai/school-incident-dispatch/actions/workflows/ci.yml/badge.svg)](https://github.com/DaoDuyHai/school-incident-dispatch/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-v4.x-010101?logo=socketdotio&logoColor=white)](https://socket.io/)
+[![Vitest](https://img.shields.io/badge/Vitest-31%20Tests%20Passing-22c55e?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![ESLint](https://img.shields.io/badge/ESLint-Clean-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
 [![Security](https://img.shields.io/badge/Auth-JWT_RBAC-FF6F00?logo=jsonwebtokens&logoColor=white)](https://jwt.io/)
 [![Postman](https://img.shields.io/badge/Postman-Collection_v2.1-FF6C37?logo=postman&logoColor=white)](https://www.postman.com/)
 
@@ -24,8 +27,9 @@
 6. [Cấu Trúc Thư Mục MVC](#6-cấu-trúc-thư-mục-mvc)
 7. [Danh Sách REST API Endpoints (11 Endpoints)](#7-danh-sách-rest-api-endpoints-11-endpoints)
 8. [Hướng Dẫn Cài Đặt & Chạy Thử Nhanh](#8-hướng-dẫn-cài-đặt--chạy-thử-nhanh)
-9. [Kiểm Thử Qua Postman Collection (Auto-Token)](#9-kiểm-thử-qua-postman-collection-auto-token)
-10. [Lộ Trình Mở Rộng (Future Roadmap)](#10-lộ-trình-mở-rộng-future-roadmap)
+9. [Kiểm Thử Tự Động & CI/CD Pipeline (Vitest + GitHub Actions)](#9-kiểm-thử-tự-động--cicd-pipeline-vitest--github-actions)
+10. [Kiểm Thử Qua Postman Collection (Auto-Token)](#10-kiểm-thử-qua-postman-collection-auto-token)
+11. [Lộ Trình Mở Rộng (Future Roadmap)](#11-lộ-trình-mở-rộng-future-roadmap)
 
 ---
 
@@ -254,7 +258,43 @@ Server sẽ chạy tại `http://localhost:3000` (Kiểm tra health-check tại 
 
 ---
 
-## 9. KIỂM THỬ QUA POSTMAN COLLECTION (AUTO-TOKEN)
+## 9. KIỂM THỬ TỰ ĐỘNG & CI/CD PIPELINE (VITEST + GITHUB ACTIONS)
+
+Dự án áp dụng bộ kiểm thử tự động toàn diện với **31/31 Test Cases** bao phủ từ Unit test logic thuần, Mock Service Layer, Integration test quy trình hoàn chỉnh, Stress test Race Condition đến Socket.io Room Isolation:
+
+### 🧪 Danh mục Test Suites (31 Test Cases)
+| Suite | Phân loại | Kỹ thuật / Phạm vi kiểm thử | Số tests | Thời gian |
+| :--- | :--- | :--- | :---: | :---: |
+| [`createHttpError.test.js`](tests/createHttpError.test.js) | **Unit Test** | Pure function edge-cases, validation, status coercion, throw/catch error handling | 10 tests | ~17ms |
+| [`incidentService.test.js`](tests/incidentService.test.js) | **Service Unit Test** | Mocking toàn bộ tầng DB Mongoose (`vi.mock`), kiểm thử nghiệp vụ độc lập không cần DB | 10 tests | ~15ms |
+| [`incidentIntegration.test.js`](tests/incidentIntegration.test.js) | **Integration Test** | Supertest + MongoDB: Luồng nghiệp vụ chuẩn (Login $\rightarrow$ Report $\rightarrow$ Accept $\rightarrow$ Resolve) | 7 tests | ~2.5s |
+| [`raceCondition.test.js`](tests/raceCondition.test.js) | **Concurrency Stress Test** | `Promise.all` 10 request đồng thời nhận cùng 1 sự cố (Kỳ vọng: Đúng 1×200 OK và 9×409 Conflict) | 1 test | ~1.5s |
+| [`socketIsolation.test.js`](tests/socketIsolation.test.js) | **Real-time Isolation Test** | `socket.io-client`: Từ chối handshake không token, cách ly phân luồng Room theo Khoa kỹ thuật / y tế / admin | 3 tests | ~330ms |
+
+### 🚀 Lệnh thực thi kiểm thử
+```bash
+# Chạy toàn bộ 31 test
+npm test
+
+# Chạy test và xuất báo cáo độ phủ mã nguồn (Code Coverage bằng V8 engine)
+npm run test:coverage
+
+# Chạy kiểm tra quy chuẩn mã nguồn tĩnh (ESLint)
+npm run lint
+```
+
+### ⚙️ Quy trình CI/CD với GitHub Actions (`.github/workflows/ci.yml`)
+Mỗi khi có commit được `push` hoặc tạo `pull_request` vào nhánh `main`:
+1. **Dịch vụ Container MongoDB độc lập:** GitHub Actions runner (`ubuntu-latest`) tự động khởi chạy Docker container `mongo:6.0` tại cổng `27017` với health-check sẵn sàng.
+2. **Khởi tạo môi trường Node.js:** Cài đặt Node.js 20.x và tối ưu hóa thời gian build với bộ đệm phụ thuộc (`cache: 'npm'`).
+3. **Cài đặt dependencies:** Chạy `npm ci` đảm bảo tính toàn vẹn phiên bản package.
+4. **Kiểm tra chuẩn mã nguồn:** Tự động quét lỗi cú pháp và biến không dùng bằng `npm run lint`.
+5. **Chạy toàn bộ Test Suites:** Tự động thực thi `npm run test:coverage` (31 tests pass) và tính toán độ phủ code.
+6. **Cập nhật Badge tự động:** Huy hiệu CI Status trên đầu README tự động chuyển sang màu xanh lá (`passing`).
+
+---
+
+## 10. KIỂM THỬ QUA POSTMAN COLLECTION (AUTO-TOKEN)
 
 Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:  
 📁 [postman/SchoolIncidentDispatch.postman_collection.json](postman/SchoolIncidentDispatch.postman_collection.json)
@@ -267,7 +307,7 @@ Dự án đính kèm sẵn file cấu hình Postman hoàn chỉnh tại:
 
 ---
 
-## 10. LỘ TRÌNH MỞ RỘNG (FUTURE ROADMAP)
+## 11. LỘ TRÌNH MỞ RỘNG (FUTURE ROADMAP)
 
 - [ ] **In-app Real-time Chat:** Mở rộng Socket.io Room `incident_${id}` để người báo cáo và nhân viên phụ trách có thể trao đổi trực tiếp khi đang xử lý sự cố.
 - [ ] **Đính kèm hình ảnh (Media Upload):** Tích hợp Cloudinary hoặc AWS S3 để người báo có thể gửi ảnh chụp hiện trường hư hại.

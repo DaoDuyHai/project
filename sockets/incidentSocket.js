@@ -20,7 +20,7 @@ export const initIncidentSocket = (io) => {
       // Gắn thông tin người dùng đã giải mã vào socket instance
       socket.user = decoded;
       next();
-    } catch (error) {
+    } catch (_error) {
       return next(new Error('Invalid or expired token'));
     }
   });
