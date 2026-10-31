@@ -2,6 +2,7 @@
 ## (SCHOOL INCIDENT DISPATCH SYSTEM)
 
 [![CI Pipeline](https://github.com/DaoDuyHai/school-incident-dispatch/actions/workflows/ci.yml/badge.svg)](https://github.com/DaoDuyHai/school-incident-dispatch/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Fly.io-24185b?logo=flydotio&logoColor=white)](https://school-incident-dispatch.fly.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
@@ -15,7 +16,9 @@
 > **Backend RESTful API & Real-time Event Dispatching System**  
 > Xây dựng với **Node.js, Express 5, MongoDB (Mongoose), Socket.io và JWT RBAC**.  
 > Tác giả: **Đào Duy Hải** ([@DaoDuyHai](https://github.com/DaoDuyHai))  
-> Repository: [https://github.com/DaoDuyHai/school-incident-dispatch](https://github.com/DaoDuyHai/school-incident-dispatch)
+> Repository: [https://github.com/DaoDuyHai/school-incident-dispatch](https://github.com/DaoDuyHai/school-incident-dispatch)  
+> 🌐 **Live Demo (Production):** [https://school-incident-dispatch.fly.dev](https://school-incident-dispatch.fly.dev)  
+> 🩺 **Health Check Diagnostics:** [https://school-incident-dispatch.fly.dev/health](https://school-incident-dispatch.fly.dev/health)
 
 ---
 

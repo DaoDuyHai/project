@@ -11,8 +11,8 @@ RUN apk add --no-cache python3 make g++
 # Tận dụng Docker Layer Cache: Chỉ copy file manifest trước
 COPY package.json package-lock.json ./
 
-# Cài đặt chính xác các production dependencies, loại bỏ devDependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# Cài đặt chính xác các production dependencies, loại bỏ devDependencies và bỏ qua git hooks
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild bcrypt && npm cache clean --force
 
 # ==============================================================================
 # Stage 2: Production Runner (Lean, Secure & Non-root)
