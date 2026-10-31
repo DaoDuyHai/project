@@ -1,63 +1,50 @@
-import Incident from "../models/incidentModel.js";
-import { createHttpError } from "../utils/createHttpError.js";
+import {
+  createIncidentService,
+  getReportsService,
+  getPendingsService,
+  getTasksService,
+  acceptIncidentService,
+  resolveIncidentService,
+} from '../services/incidentService.js';
 
 // 1. Tạo sự cố mới (Reporter)
 export const createIncident = async (req, res) => {
   const { title, location, type, description } = req.body;
 
-  if (!title || !location || !type) {
-    throw createHttpError(
-      "Please provide title, location, and incident type.",
-      400,
-    );
-  }
-
-  let department = "TECHNICAL";
-  if (type === "Tai nạn/Sức khỏe/Cấp cứu") {
-    department = "MEDICAL";
-  }
-
-  const reporter = req.user.userId;
-
-  const newIncident = await Incident.create({
+  const newIncident = await createIncidentService({
     title,
     location,
     type,
     description,
-    department,
-    reporter,
+    reporterId: req.user.userId,
   });
 
-  await newIncident.populate("reporter", "fullName userName department");
-
-  const io = req.app.get("io");
-
-  io.to(`department_${department}`)
-    .to("room_admin")
-    .to(`user_${reporter}`)
-    .emit("incident:created", {
-      message: "New incident reported successfully.",
-      data: newIncident,
-    });
+  const io = req.app.get('io');
+  if (io) {
+    const reporterId = newIncident.reporter?._id || newIncident.reporter;
+    io.to(`department_${newIncident.department}`)
+      .to('room_admin')
+      .to(`user_${reporterId}`)
+      .emit('incident:created', {
+        message: 'New incident reported successfully.',
+        data: newIncident,
+      });
+  }
 
   return res.status(201).json({
     success: true,
-    message: "Incident created successfully.",
+    message: 'Incident created successfully.',
     data: newIncident,
   });
 };
 
 // 2. Lấy danh sách sự cố của chính mình (Reporter Tab 2)
 export const getReports = async (req, res) => {
-  const incidents = await Incident.find({ reporter: req.user.userId })
-    .populate("reporter", "fullName userName department")
-    .sort({
-      createdAt: -1,
-    });
+  const incidents = await getReportsService(req.user.userId);
 
   return res.status(200).json({
     success: true,
-    message: "Get my reported incidents successfully.",
+    message: 'Get my reported incidents successfully.',
     total: incidents.length,
     data: incidents,
   });
@@ -65,16 +52,11 @@ export const getReports = async (req, res) => {
 
 // 3. Lấy danh sách sự cố chờ tiếp nhận theo đúng phòng ban (Dispatcher Tab 1)
 export const getPendings = async (req, res) => {
-  const incidents = await Incident.find({
-    status: "PENDING",
-    department: req.user.department,
-  })
-    .populate("reporter", "fullName userName")
-    .sort({ createdAt: -1 });
+  const incidents = await getPendingsService(req.user.department);
 
   return res.status(200).json({
     success: true,
-    message: "Get pending incidents successfully.",
+    message: 'Get pending incidents successfully.',
     total: incidents.length,
     data: incidents,
   });
@@ -82,13 +64,11 @@ export const getPendings = async (req, res) => {
 
 // 4. Lấy danh sách sự cố do mình phụ trách (Dispatcher Tab 2)
 export const getTasks = async (req, res) => {
-  const tasks = await Incident.find({ responder: req.user.userId })
-    .populate("reporter", "fullName userName")
-    .sort({ updatedAt: -1 });
+  const tasks = await getTasksService(req.user.userId);
 
   return res.status(200).json({
     success: true,
-    message: "Get my assigned tasks successfully.",
+    message: 'Get my assigned tasks successfully.',
     total: tasks.length,
     data: tasks,
   });
@@ -96,135 +76,50 @@ export const getTasks = async (req, res) => {
 
 // 5. Bấm nhận sự cố (Dispatcher)
 export const acceptIncident = async (req, res) => {
-  const incidentId = req.params.id;
+  const { incident, updatedIncident } = await acceptIncidentService(
+    req.params.id,
+    req.user
+  );
 
-  const incident = await Incident.findById(incidentId);
-  if (!incident) {
-    throw createHttpError("Incident not found.", 404);
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user_${incident.reporter}`)
+      .to(`department_${incident.department}`)
+      .to('room_admin')
+      .emit('incident:accepted', {
+        message: 'Incident accepted successfully.',
+        data: updatedIncident,
+      });
   }
-
-  // Kiểm tra chuyên môn phòng ban
-  if (incident.department !== req.user.department) {
-    throw createHttpError(
-      "Access denied. This incident belongs to another department.",
-      403,
-    );
-  }
-
-  // Cập nhật nguyên tử: chỉ nhận khi status còn PENDING (chống 2 người nhận cùng lúc)
-  const updatedIncident = await Incident.findOneAndUpdate(
-    {
-      _id: incidentId,
-      status: "PENDING",
-    },
-    {
-      status: "IN_PROGRESS",
-      responder: req.user.userId,
-    },
-    {
-      new: true,
-    },
-  )
-    .populate("reporter", "fullName userName department")
-    .populate("responder", "fullName userName department");
-
-  if (!updatedIncident) {
-    throw createHttpError(
-      "This incident has already been accepted by another responder.",
-      409,
-    );
-  }
-
-  const io = req.app.get("io");
-
-  io.to(`user_${incident.reporter}`)
-    .to(`department_${incident.department}`)
-    .to("room_admin")
-    .emit("incident:accepted", {
-      message: "Incident accepted successfully.",
-      data: updatedIncident,
-    });
 
   return res.status(200).json({
     success: true,
-    message: "Incident accepted successfully.",
+    message: 'Incident accepted successfully.',
     data: updatedIncident,
   });
 };
 
 // 6. Bấm hoàn thành sự cố (Dispatcher)
 export const resolveIncident = async (req, res) => {
-  const { resolutionNotes } = req.body;
-  const incidentId = req.params.id;
+  const { incident, updatedIncident } = await resolveIncidentService(
+    req.params.id,
+    req.user,
+    req.body.resolutionNotes
+  );
 
-  const incident = await Incident.findById(incidentId);
-  if (!incident) {
-    throw createHttpError("Incident not found.", 404);
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user_${incident.reporter}`)
+      .to('room_admin')
+      .emit('incident:resolved', {
+        message: 'Incident resolved successfully.',
+        data: updatedIncident,
+      });
   }
-
-  // Kiểm tra chuyên môn phòng ban
-  if (incident.department !== req.user.department) {
-    throw createHttpError(
-      "Access denied. This incident belongs to another department.",
-      403,
-    );
-  }
-
-  // Kiểm tra trạng thái hiện tại
-  if (incident.status !== "IN_PROGRESS") {
-    throw createHttpError(
-      "Incident must be in-progress before it can be resolved.",
-      400,
-    );
-  }
-
-  // Kiểm tra quyền sở hữu: chỉ đúng người nhận việc mới được bấm hoàn thành
-  if (
-    !incident.responder ||
-    incident.responder.toString() !== req.user.userId
-  ) {
-    throw createHttpError(
-      "Access denied. You are not the assigned responder for this incident.",
-      403,
-    );
-  }
-
-  const updatedIncident = await Incident.findOneAndUpdate(
-    {
-      _id: incidentId,
-      status: "IN_PROGRESS",
-    },
-    {
-      status: "RESOLVED",
-      resolutionNotes: resolutionNotes || "Resolved successfully.",
-      resolvedAt: new Date(),
-    },
-    {
-      new: true,
-    },
-  )
-    .populate("reporter", "fullName userName department")
-    .populate("responder", "fullName userName department");
-
-  if (!updatedIncident) {
-    throw createHttpError(
-      "Unable to resolve incident (status may have changed).",
-      400,
-    );
-  }
-
-  const io = req.app.get("io");
-
-  io.to(`user_${incident.reporter}`)
-    .to("room_admin")
-    .emit("incident:resolved", {
-      message: "Incident resolved successfully.",
-      data: updatedIncident,
-    });
 
   return res.status(200).json({
     success: true,
-    message: "Incident resolved successfully.",
+    message: 'Incident resolved successfully.',
     data: updatedIncident,
   });
 };
